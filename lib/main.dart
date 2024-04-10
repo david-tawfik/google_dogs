@@ -1,20 +1,28 @@
+import 'dart:html';
+
 import 'package:flutter/material.dart';
+import 'package:google_dogs/Screens/document_manager.dart';
+import 'package:google_dogs/utilities/screen_size_handler.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const GoogleDogs());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class GoogleDogs extends StatelessWidget {
+  const GoogleDogs({
+    super.key,
+  });
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+    ScreenSizeHandler.initialize(
+        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+    return MaterialApp(
+      theme: ThemeData.dark(),
+      debugShowCheckedModeBanner: false,
+      routes: {
+        DocumentManagerScreen.id: (context) => const DocumentManagerScreen(),
+      },
+      initialRoute: DocumentManagerScreen.id,
     );
   }
 }
