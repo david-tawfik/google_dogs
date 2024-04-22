@@ -9,6 +9,7 @@ import '../components/credentials_text_field.dart';
 import '../components/continue_button.dart';
 import '../components/logo_text_app_bar.dart';
 import 'dart:convert';
+import '/screens/document_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -54,68 +55,23 @@ class LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Log in',
                       style: TextStyle(
-                        fontSize: ScreenSizeHandler.smaller * 0.07,
+                        fontSize: ScreenSizeHandler.smaller * 0.05,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: ScreenSizeHandler.screenHeight * 0.02,
-                      ),
-                      child: const AcknowledgementText(),
-                    ),
-                    ContinueButton(
-                      key: const Key('login_screen_continue_with_google_button'),
-                      onPress: (){},// => AuthService().signInWithGoogle(),
-                      text: "Continue with Google",
-                      icon: Image(
-                        image:
-                            const AssetImage('assets/images/google_logo.png'),
-                        height: ScreenSizeHandler.screenHeight * 0.03,
-                        width: ScreenSizeHandler.screenWidth * 0.05,
-                      ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * 0.06,
-                          vertical: ScreenSizeHandler.screenHeight * 0.01),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Expanded(
-                            child: Divider(
-                              color: kHintTextColor,
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal:
-                                    ScreenSizeHandler.screenWidth * 0.03),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: kHintTextColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: ScreenSizeHandler.smaller * 0.025,
-                              ),
-                            ),
-                          ),
-                          const Expanded(
-                            child: Divider(
-                              color: kHintTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const AcknowledgementText(),
                     Padding(
                       padding: EdgeInsets.symmetric(
-          horizontal: ScreenSizeHandler.screenWidth * 0.04,
-          vertical: ScreenSizeHandler.screenHeight * 0.01),
-                      child: CredentialsTextField( 
-                        key: const Key('login_screen_email_or_username_text_field'),
+                          horizontal: ScreenSizeHandler.screenWidth *
+                              kButtonWidthRatio *
+                              7,
+                          vertical: ScreenSizeHandler.screenHeight *
+                              kButtonHeightRatio *
+                              2),
+                      child: CredentialsTextField(
+                        key: const Key('login_screen_email_text_field'),
                         controller: nameController,
                         isObscure: false,
                         text: 'Email',
@@ -151,8 +107,12 @@ class LoginScreenState extends State<LoginScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio,
-                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio),
+                          horizontal: ScreenSizeHandler.screenWidth *
+                              kButtonWidthRatio *
+                              7,
+                          vertical: ScreenSizeHandler.screenHeight *
+                              kButtonHeightRatio *
+                              2),
                       child: CredentialsTextField(
                         key: const Key('login_screen_password_text_field'),
                         controller: passController,
@@ -186,47 +146,23 @@ class LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * 0.03,
-                          vertical: ScreenSizeHandler.screenHeight * 0.01),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          TextLink(
-                            key: const Key('login_screen_forgot_password_text_link'),
-                            fontSizeRatio: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
-                            text: 'Forgot your password?',
-                            onTap: () {
-                            },
-                          ),
-                        ],
-                      ),
-                    )
+                    ContinueButton(
+                      key: const Key('login_screen_continue_button'),
+                      text: "Continue",
+                      isButtonEnabled: isButtonEnabled,
+                      onPress: () async {
+                        if (isButtonEnabled) {
+                          Navigator.pushNamed(context, DocumentManagerScreen.id);
+                        } else {
+                          null;
+                        }
+                      },
+                      color: Colors.deepPurple,
+                    ),
                   ],
                 );
               },
             ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(bottom: ScreenSizeHandler.screenHeight * kButtonWidthRatio),
-                child: ContinueButton(
-                  key: const Key('login_screen_continue_button'),
-                  text: "Continue",
-                  isButtonEnabled: isButtonEnabled,
-                  onPress: () async {
-                    if (isButtonEnabled) {
-                    } else {
-                      null;
-                    }
-                  },
-                  color: kOrangeActivatedColor,
-                ),
-              ),
-            ],
           ),
         ],
       ),

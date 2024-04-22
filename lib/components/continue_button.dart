@@ -24,7 +24,7 @@ class ContinueButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*7,
+          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*10,
           vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -35,7 +35,7 @@ class ContinueButton extends StatelessWidget {
             ),
             padding: EdgeInsets.symmetric(
               vertical: ScreenSizeHandler.screenHeight * 0.015,
-              horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio,
+              horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*0.3,
             )),
         onPressed: onPress,
         child: Row(
@@ -48,7 +48,7 @@ class ContinueButton extends StatelessWidget {
                   text,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
+                    fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio*0.7,
                   ),
                 ),
               ),

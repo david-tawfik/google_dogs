@@ -82,13 +82,13 @@ class _FirstScreenState extends State<FirstScreen> {
                         Text(
                           'Already a user?',
                           style: TextStyle(
-                            fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
+                            fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio*0.7,
                             color: Colors.white,
                           ),
                         ),
                         TextLink(
                           key: const Key('first_screen_log_in_text_link'),
-                            fontSizeRatio: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
+                            fontSizeRatio: ScreenSizeHandler.smaller * kButtonSmallerFontRatio*0.7,
                             onTap: () {
                               Navigator.push(
                                   context,

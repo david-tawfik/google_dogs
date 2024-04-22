@@ -17,10 +17,13 @@ class LogoTextAppBar extends StatelessWidget {
       backgroundColor: kBackgroundColor,
       title: Hero(
         tag: 'logo',
-        child: Image(
-          image: const AssetImage('assets/images/logo_white.png'),
-          height: ScreenSizeHandler.screenHeight * 0.1,
-          width: ScreenSizeHandler.screenWidth * 0.1,
+        child: Padding(
+          padding: EdgeInsets.only(top: ScreenSizeHandler.screenHeight * 0.015),
+          child: Image(
+            image: const AssetImage('assets/images/logo_white.png'),
+            height: ScreenSizeHandler.screenHeight * 0.1,
+            width: ScreenSizeHandler.screenWidth * 0.1,
+          ),
         ),
       ),
       flexibleSpace: SafeArea(
@@ -36,9 +39,8 @@ class LogoTextAppBar extends StatelessWidget {
               child: Text(
                 text,
                 style: TextStyle(
-                  fontSize: ScreenSizeHandler.smaller * kAppBarTitleSmallerFontRatio,
+                  fontSize: ScreenSizeHandler.smaller * kAppBarTitleSmallerFontRatio*0.7,
                   fontWeight: FontWeight.bold,
-                  color: kHintTextColor,
                 ),
                 textAlign: TextAlign.center,
               ),

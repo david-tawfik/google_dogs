@@ -27,7 +27,6 @@ class SignupScreenState extends State<SignupScreen> {
   bool isValidEmail = true;
   bool isValidPassword = true;
 
-  void continueNavigation() {}
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +51,7 @@ class SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      'Hi new friend,\nWelcome to Reddit byLham!',
+                      'Hi new friend,\nWelcome to Google Dogs!',
                       style: TextStyle(
                         fontSize: ScreenSizeHandler.smaller * 0.05,
                         fontWeight: FontWeight.bold,
@@ -60,16 +59,11 @@ class SignupScreenState extends State<SignupScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: ScreenSizeHandler.screenHeight * 0.02,
-                      ),
-                      child: const AcknowledgementText(),
-                    ),
+                    const AcknowledgementText(),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio,
-                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio),
+                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*7,
+                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio*2),
                       child: CredentialsTextField(
                         key: const Key('signup_screen_email_text_field'),
                         controller: nameController,
@@ -114,7 +108,7 @@ class SignupScreenState extends State<SignupScreen> {
                                 });
                               }
                               setState(() {
-
+                        
                               });
                             }
                           });
@@ -126,14 +120,14 @@ class SignupScreenState extends State<SignupScreen> {
                       visible: !isValidEmail,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio),
+                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio*6),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Please enter a valid email address',
                             style: TextStyle(
                               color: kErrorColor,
-                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio,
+                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio*0.7,
                             ),
                           ),
                         ),
@@ -141,8 +135,8 @@ class SignupScreenState extends State<SignupScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio,
-                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio),
+                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*7,
+                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio*2),
                       child: CredentialsTextField(
                         key: const Key('signup_screen_password_text_field'),
                         controller: passController,
@@ -193,43 +187,35 @@ class SignupScreenState extends State<SignupScreen> {
                       visible: !isValidPassword || isPassFocused,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio),
+                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio*6),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Password must be at least 8 characters',
                             style: TextStyle(
                               color: isValidPassword? Colors.green: kErrorColor,
-                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio,
+                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio*0.7,
                             ),
                           ),
                         ),
                       ),
                     ),
+                    ContinueButton(
+                      key: const Key('login_screen_continue_button'),
+                      text: "Continue",
+                      isButtonEnabled: isButtonEnabled,
+                      onPress: () async {
+                        if (isButtonEnabled) {
+                        } else {
+                          null;
+                        }
+                      },
+                      color: Colors.deepPurple,
+                    ),
                   ],
                 );
               },
             ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(bottom: ScreenSizeHandler.screenHeight * kButtonWidthRatio),
-                child: ContinueButton(
-                  key: const Key('signup_screen_continue_button'),
-                  text: "Continue",
-                  isButtonEnabled: isButtonEnabled,
-                  onPress: () {
-                    if (isButtonEnabled) {
-                    } else {
-                      null;
-                    }
-                  },
-                  color: kOrangeActivatedColor,
-                ),
-              ),
-            ],
           ),
         ],
       ),

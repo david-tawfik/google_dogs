@@ -57,7 +57,7 @@ const double switchHeightRatio = 0.072;
 const double switchCircleSizeRatio = 0.065;
 const double switchBorderRadiusRatio = 0.05;
 
-const Color kDisabledButtonColor = Colors.grey;
+Color kDisabledButtonColor = Colors.deepPurple[200]!;
 const Color kBlockButtonColor = Color(0xFF44A3F2);
 
 const kPageTitleStyle =

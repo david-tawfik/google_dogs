@@ -14,9 +14,9 @@ class AcknowledgementText extends StatelessWidget {
           horizontal: ScreenSizeHandler.screenWidth * kAcknowledgeTextWidthRatio,
           vertical: ScreenSizeHandler.screenHeight * kAcknowledgeTextHeightRatio),
       child: Text(
-        'By continuing, you agree to our User Agreement and acknowlege that you understand the Privacy Policy',
+        'By continuing, you agree to our User Agreement\nand acknowlege that you understand the Privacy Policy',
         style: TextStyle(
-          fontSize: ScreenSizeHandler.smaller * kAcknowledgeTextSmallerFontRatio,
+          fontSize: ScreenSizeHandler.smaller * kAcknowledgeTextSmallerFontRatio*0.7,
           color: kHintTextColor,
         ),
         textAlign: TextAlign.center,
