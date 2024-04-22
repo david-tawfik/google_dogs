@@ -23,17 +23,23 @@ class GoogleDogs extends StatelessWidget {
   Widget build(BuildContext context) {
     ScreenSizeHandler.initialize(
         MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
-    return MaterialApp(
-      title: 'HTTP',
-      theme: ThemeData.dark(),
-      debugShowCheckedModeBanner: false,
-      routes: {
-        FirstScreen.id: (context) => FirstScreen(),
-        SignupScreen.id: (context) => const SignupScreen(),
-        LoginScreen.id: (context) => const LoginScreen(),
-        DocumentManagerScreen.id: (context) => const DocumentManagerScreen(),
-      },
-      initialRoute: FirstScreen.id//(token==null)?FirstScreen.id: (JwtDecoder.isExpired(token)) ? LoginScreen.id : HomePageScreen.id,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: 500,
+        minWidth: 800,
+      ),
+      child: MaterialApp(
+        title: 'Dogs',
+        theme: ThemeData.dark(),
+        debugShowCheckedModeBanner: false,
+        routes: {
+          FirstScreen.id: (context) => FirstScreen(),
+          SignupScreen.id: (context) => const SignupScreen(),
+          LoginScreen.id: (context) => const LoginScreen(),
+          DocumentManagerScreen.id: (context) => const DocumentManagerScreen(),
+        },
+        initialRoute: FirstScreen.id//(token==null)?FirstScreen.id: (JwtDecoder.isExpired(token)) ? LoginScreen.id : HomePageScreen.id,
+      ),
     );
   }
 }

@@ -46,11 +46,11 @@ class CredentialsTextField extends StatelessWidget {
         ),
         labelText: text,
         contentPadding: EdgeInsets.symmetric(
-            vertical: ScreenSizeHandler.smaller * kButtonWidthRatio,
+            vertical: ScreenSizeHandler.smaller * kButtonWidthRatio*0.5,
             horizontal: ScreenSizeHandler.smaller * kButtonWidthRatio),
         labelStyle: TextStyle(
           color: kHintTextColor,
-          fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
+          fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio*0.7,
         ),
         fillColor: kFillingColor,
         filled: true,
@@ -59,7 +59,7 @@ class CredentialsTextField extends StatelessWidget {
       ),
       style: TextStyle(
         color: Colors.white,
-        fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio,
+        fontSize: ScreenSizeHandler.smaller * kButtonSmallerFontRatio*0.7,
       ),
     );
   }

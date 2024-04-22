@@ -24,7 +24,10 @@ class TextLink extends StatelessWidget {
           text,
           style: TextStyle(
             fontSize: fontSizeRatio,
-            color: Colors.blue,
+            color: Colors.deepPurple,
+            decoration: TextDecoration.underline,
+            decorationColor: Colors.deepPurple,
+            
           ),
         ),
       ),
