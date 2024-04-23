@@ -3,6 +3,7 @@ import 'dart:ui_web';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_dogs/constants.dart';
+import 'package:google_dogs/screens/text_editor_page.dart';
 import 'package:google_dogs/utilities/screen_size_handler.dart';
 import 'package:google_dogs/components/document.dart';
 
@@ -114,79 +115,82 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Row(
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.menu),
-              ),
-              const Image(
-                image: AssetImage('assets/images/logo_white.png'),
-                height: 50,
-              ),
-              const Text('Dogs'),
-              const Spacer(),
-              const Icon(Icons.apps_rounded),
-              const Padding(
-                padding: EdgeInsets.only(left: 12),
-                child: CircleAvatar(
-                  backgroundColor: Colors.deepPurple,
-                  radius: 17,
-                  child: Text('P'),
+    return Theme(
+      data: ThemeData.dark(),
+      child: Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.menu),
                 ),
-              )
-            ],
+                const Image(
+                  image: AssetImage('assets/images/logo_white.png'),
+                  height: 50,
+                ),
+                const Text('Dogs'),
+                const Spacer(),
+                const Icon(Icons.apps_rounded),
+                const Padding(
+                  padding: EdgeInsets.only(left: 12),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.deepPurple,
+                    radius: 17,
+                    child: Text('P'),
+                  ),
+                )
+              ],
+            ),
           ),
-        ),
-        body: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: ScreenSizeHandler.screenWidth * 0.12),
-          child: LayoutBuilder(builder: (context, constraints) {
-            return GridView.builder(
-              itemCount: documents.length+1,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: (ScreenSizeHandler.screenWidth *
-                                0.9 ~/
-                                kDocumentWidth) -
-                            2 >
-                        0
-                    ? (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
-                        2
-                    : 1,
-                mainAxisExtent: kDocumentHeight + 62,
-              ),
-              itemBuilder: (BuildContext context, int index) {
-                if (index == 0) {
-                  return GestureDetector(
-                    onTap: () {
-                      //TODO: LAMA YEKHALASO OM EL PAGE
-                      setState(() {
-                        documents.insert(0, "Untitled Document");
-                      });
-                    },
-                    child: const SizedBox(
-                      height: kDocumentHeight,
-                      width: kDocumentWidth,
-                      child: Image(
-                        image: AssetImage(
-                          "assets/images/AddDocument.png",
+          body: Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: ScreenSizeHandler.screenWidth * 0.12),
+            child: LayoutBuilder(builder: (context, constraints) {
+              return GridView.builder(
+                itemCount: documents.length+1,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: (ScreenSizeHandler.screenWidth *
+                                  0.9 ~/
+                                  kDocumentWidth) -
+                              2 >
+                          0
+                      ? (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
+                          2
+                      : 1,
+                  mainAxisExtent: kDocumentHeight + 62,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  if (index == 0) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, TextEditorPage.id);
+                        setState(() {
+                          documents.insert(0, "Untitled Document");
+                        });
+                      },
+                      child: const SizedBox(
+                        height: kDocumentHeight,
+                        width: kDocumentWidth,
+                        child: Image(
+                          image: AssetImage(
+                            "assets/images/AddDocument.png",
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }
-                return Expanded(
-                    child: Document(
-                  docName: documents[index-1],
-                  index: index-1,
-                  showRenameDialog: _showRenameDialog,
-                  showDeleteDialog: _showDeleteDialog,
-                ));
-              },
-            );
-          }),
-        ));
+                    );
+                  }
+                  return Expanded(
+                      child: Document(
+                    docName: documents[index-1],
+                    index: index-1,
+                    showRenameDialog: _showRenameDialog,
+                    showDeleteDialog: _showDeleteDialog,
+                  ));
+                },
+              );
+            }),
+          )),
+    );
   }
 }

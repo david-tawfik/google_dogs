@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:google_dogs/Screens/document_manager.dart';
+import 'package:google_dogs/components/continue_button.dart';
+import 'package:google_dogs/components/credentials_text_field.dart';
 import 'package:google_dogs/constants.dart';
+import 'package:google_dogs/utilities/email_regex.dart';
+
 class TextEditorPage extends StatefulWidget {
   static const String id = 'text_editor';
   @override
@@ -17,6 +21,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
   bool isBold = false;
   bool isItalic = false;
   FocusNode boldFocusNode = FocusNode();
+  bool _futureTextIsBold = false;
+  FocusNode _editorFocusNode = FocusNode();
+  String name = 'Document 1';
+  TextEditingController _emailController = TextEditingController();
+  bool isValid = false;
 
   final quill.QuillController _controller = quill.QuillController.basic();
 
@@ -36,54 +45,126 @@ class _TextEditorPageState extends State<TextEditorPage> {
             actions: [
               IconButton(
                   style: ButtonStyle(
-                    foregroundColor: isBold
-                        ? MaterialStateProperty.all(Colors.white)
-                        : MaterialStateProperty.all(kBackgroundColor),
-                    backgroundColor: isBold
-                        ? MaterialStateProperty.all(Colors.deepPurple[400])
-                        : MaterialStateProperty.all(Colors.deepPurple[200]),
+                    foregroundColor:
+                        MaterialStateProperty.all(kBackgroundColor),
+                    backgroundColor:
+                        MaterialStateProperty.all(Colors.deepPurple[200]),
                   ),
                   focusNode: boldFocusNode,
                   onPressed: () {
                     setState(() {
-                      // isBold = !isBold;
-
                       final selectionStyle = _controller.getSelectionStyle();
-                      // isBold = selectionStyle.contains(quill.Attribute.bold);
                       isBold = !selectionStyle.containsKey('bold');
-
+                      _futureTextIsBold = isBold;
                       if (isBold) {
                         _controller.formatSelection(quill.Attribute.bold);
                       } else {
-                         _controller.formatSelection(
+                        _controller.formatSelection(
                             quill.Attribute.clone(quill.Attribute.bold, null));
                       }
-                      boldFocusNode.unfocus();
-                      // textFieldFocusNode.requestFocus();
+                      _editorFocusNode.requestFocus();
                     });
                   },
                   icon: Icon(Icons.format_bold)),
               IconButton(
                   style: ButtonStyle(
-                    foregroundColor: isItalic
-                        ? MaterialStateProperty.all(Colors.white)
-                        : MaterialStateProperty.all(kBackgroundColor),
-                    backgroundColor: isItalic
-                        ? MaterialStateProperty.all(Colors.deepPurple[400])
-                        : MaterialStateProperty.all(Colors.deepPurple[200]),
+                    foregroundColor:
+                        MaterialStateProperty.all(kBackgroundColor),
+                    backgroundColor:
+                        MaterialStateProperty.all(Colors.deepPurple[200]),
                   ),
                   onPressed: () {
                     setState(() {
-                      isItalic = !isItalic;
-                      // textFieldFocusNode.requestFocus();
+                      final selectionStyle = _controller.getSelectionStyle();
+                      isItalic = !selectionStyle.containsKey('italic');
+
+                      if (isItalic) {
+                        _controller.formatSelection(quill.Attribute.italic);
+                      } else {
+                        _controller.formatSelection(quill.Attribute.clone(
+                            quill.Attribute.italic, null));
+                      }
+                      // boldFocusNode.unfocus();
+                      // _controller.moveCursorToEnd();
+                      _editorFocusNode.requestFocus();
                     });
                   },
                   icon: Icon(Icons.format_italic)),
+              IconButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Share '$name'"),
+                        content: Column(
+                          children: [
+                            TextField(
+                              controller: _emailController,
+                              decoration: const InputDecoration(
+                                hintText: 'Add people',
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  isValid = isEmailValid(_emailController.text);
+                                });
+                              },
+                            ),
+                            isValid & _emailController.text.isNotEmpty
+                                ? DropdownButton(
+                                    items:const [
+                                      DropdownMenuItem(
+                                        value: 'Editor',
+                                        child: Text('Editor'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Viewer',
+                                        child: Text('Viewer'),
+                                      ),
+                                    ],
+                                    onChanged: (value) {},
+                                  )
+                                : Text(
+                                    'Please enter a valid email address',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                          ],
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text('Copy Link'),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          TextButton(
+                            style: ButtonStyle(
+                              foregroundColor:
+                                  MaterialStateProperty.all(kBackgroundColor),
+                              backgroundColor: MaterialStateProperty.all(
+                                  Colors.deepPurple[200]),
+                            ),
+                            child: Text('Done'),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                icon: Icon(
+                  Icons.share,
+                  color: Colors.black,
+                ),
+              ),
               IconButton(
                 color: Colors.black,
                 icon: Icon(Icons.clear),
                 onPressed: () {
                   _textEditingController.clear();
+                  _controller.clear();
                 },
               ),
             ],
@@ -91,22 +172,22 @@ class _TextEditorPageState extends State<TextEditorPage> {
           body: Padding(
             padding: EdgeInsets.all(16.0),
             child: quill.QuillEditor.basic(
+              focusNode: _editorFocusNode,
               configurations: quill.QuillEditorConfigurations(
                 controller: _controller,
                 autoFocus: true,
                 readOnly: false, // true for view only mode
                 placeholder: 'Add your text here...',
               ),
-             
             ),
           ),
           floatingActionButton: FloatingActionButton(
             focusColor: Colors.deepPurple[200],
             onPressed: () {
               // Add your functionality here, for example, saving the text
-              String text = _controller.document.toPlainText();
+              // String text = _controller.document.toPlainText();
               // Handle the text
-              print(text);
+              // print(text);
             },
             tooltip: 'Save',
             child: Icon(Icons.save),
