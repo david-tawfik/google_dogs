@@ -98,3 +98,8 @@ const kErrorMessageLeftPaddingRatio = 0.05;
 Color kErrorColor = Colors.red.shade200;
 Color kOrangeActivatedColor = Colors.orange.shade900;
 
+///////////////
+// Constants for APT project//
+
+const double kDocumentWidth = 220 * 0.6;
+const double kDocumentHeight = 300 * 0.6;
