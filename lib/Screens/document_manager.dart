@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/screens/text_editor_page.dart';
+import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/screen_size_handler.dart';
 import 'package:google_dogs/components/document.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
@@ -16,6 +17,7 @@ class DocumentManagerScreen extends StatefulWidget {
 }
 
 class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
+  ApiService apiService = ApiService();
   String userInitial = '';
   String userId = '';
   List<DocumentStruct> documents = [];
@@ -71,6 +73,58 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     // setState(() {
     //   documents[index] = newName;
     // });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (firstTime) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.settings.arguments != null) {
+        final Map<String, dynamic> args = route.settings.arguments as Map<String, dynamic>;
+        userId = args['userId'].toString();
+        getAllUserDocuments();
+        firstTime = false;
+      }
+    }
+  }
+
+  Future<void> getAllUserDocuments() async {
+    print('getAllUserDocuments $userId');
+    setState(() {
+      documents.clear();
+    });
+    var response = await apiService.getAllUserDocuments({'userId': userId});
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      var documentNames = jsonDecode(response.body);
+      for (var document in documentNames) {
+        documentNames.add(document['title']);
+      }
+      setState(() {
+        documents = documentNames;
+      });
+    } else {
+      if (mounted) {
+        showSnackBar('Failed to get documents', context);
+      }
+    }
+  }
+
+  Future<void> createDocument() async {
+    print('createDocument $userId');
+    var response = await apiService.createDocument({'userId': userId});
+    print(response);
+    if (response.statusCode == 200) {
+      var document = jsonDecode(response.body);
+      setState(() {
+        documents.insert(0, document['title']);
+        Navigator.pushNamed(context, TextEditorPage.id,
+            arguments: {"documentId": document['id']});
+      });
+    } else {
+      showSnackBar('Failed to create document', context);
+    }
   }
 
   void _removeDocument(int index) {
@@ -211,10 +265,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                   if (index == 0) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, TextEditorPage.id);
-                        // setState(() {
-                        //   documents.insert(0, "Untitled Document");
-                        // });
+                        createDocument();
                       },
                       child: const SizedBox(
                         height: kDocumentHeight,
@@ -233,7 +284,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                     index: index - 1,
                     showRenameDialog: _showRenameDialog,
                     showDeleteDialog: _showDeleteDialog,
-                  ));
+                  );
                 },
               );
             }),
