@@ -148,16 +148,23 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                 horizontal: ScreenSizeHandler.screenWidth * 0.12),
             child: LayoutBuilder(builder: (context, constraints) {
               return GridView.builder(
-                itemCount: documents.length+1,
+                itemCount: documents.length + 1,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: (ScreenSizeHandler.screenWidth *
-                                  0.9 ~/
-                                  kDocumentWidth) -
-                              2 >
-                          0
-                      ? (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
-                          2
-                      : 1,
+                  crossAxisCount:
+                      (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
+                                  2 >
+                              7
+                          ? 7
+                          : (ScreenSizeHandler.screenWidth *
+                                          0.9 ~/
+                                          kDocumentWidth) -
+                                      2 >
+                                  0
+                              ? (ScreenSizeHandler.screenWidth *
+                                      0.9 ~/
+                                      kDocumentWidth) -
+                                  2
+                              : 1,
                   mainAxisExtent: kDocumentHeight + 62,
                 ),
                 itemBuilder: (BuildContext context, int index) {
@@ -182,8 +189,8 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                   }
                   return Expanded(
                       child: Document(
-                    docName: documents[index-1],
-                    index: index-1,
+                    docName: documents[index - 1],
+                    index: index - 1,
                     showRenameDialog: _showRenameDialog,
                     showDeleteDialog: _showDeleteDialog,
                   ));
