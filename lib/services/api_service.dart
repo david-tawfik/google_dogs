@@ -115,8 +115,10 @@ class ApiService {
   }
 
     Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
-    var result = await request('/relations/getAllUserDocuments',
-        headers: header, method: 'GET', body: body);
+      print(body);
+    var result = await request('/relations/getAllUserDocuments?userId=${body['userId']}',
+        headers: header, method: 'GET');
+    print(result);
     return result;
   }
 }
