@@ -41,15 +41,16 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
 
   @override
   void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
-    if (firstTime) {
-      final Map<String, dynamic>? args =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      userId = args!['userId'].toString();
-      //getAllUserDocuments();
-      firstTime = false;
-    }
     super.didChangeDependencies();
+    if (firstTime) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.settings.arguments != null) {
+        final Map<String, dynamic> args = route.settings.arguments as Map<String, dynamic>;
+        userId = args['userId'].toString();
+        getAllUserDocuments();
+        firstTime = false;
+      }
+    }
   }
 
   Future<void> getAllUserDocuments() async {
