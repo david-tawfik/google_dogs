@@ -1,14 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
-
 import 'screens/first_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'utilities/screen_size_handler.dart';
 import 'package:google_dogs/Screens/document_manager.dart';
-import 'package:google_dogs/constants.dart';
 import 'screens/text_editor_page.dart';
 
 void main() {
@@ -28,15 +23,12 @@ class GoogleDogs extends StatelessWidget {
         // theme: ThemeData.dark(),
         debugShowCheckedModeBanner: false,
         routes: {
-          FirstScreen.id: (context) => FirstScreen(),
+          FirstScreen.id: (context) => const FirstScreen(),
           SignupScreen.id: (context) => const SignupScreen(),
           LoginScreen.id: (context) => const LoginScreen(),
-          DocumentManagerScreen.id: (context) =>  DocumentManagerScreen(),
+          DocumentManagerScreen.id: (context) => DocumentManagerScreen(),
           TextEditorPage.id: (context) => TextEditorPage(),
         },
-        initialRoute: FirstScreen
-            .id //(token==null)?FirstScreen.id: (JwtDecoder.isExpired(token)) ? LoginScreen.id : HomePageScreen.id,
-        );
+        initialRoute: FirstScreen.id);
   }
 }
-
