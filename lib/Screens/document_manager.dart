@@ -1,7 +1,6 @@
-import 'dart:html';
-import 'dart:ui_web';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/screens/text_editor_page.dart';
 import 'package:google_dogs/services/api_service.dart';
@@ -19,24 +18,61 @@ class DocumentManagerScreen extends StatefulWidget {
 
 class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   ApiService apiService = ApiService();
-  List<String> documents = [
-    'Document 1',
-    'Document 2',
-    'Document 3',
-    'Document 4',
-    'Document 5',
-    'Document 6',
-    'Document 7',
-    'Document 8',
-    'Document 9',
-    'Document 10',
-  ];
-  bool firstTime = true;
+  String userInitial = '';
   String userId = '';
-  void _editDocumentName(String newName, int index) {
+  List<DocumentStruct> documents = [];
+
+  Future<void> getAllUserDocuments() async {
     setState(() {
-      documents[index] = newName;
+      documents.clear();
     });
+    ApiService apiService = ApiService();
+    var response = await apiService.getAllUserDocuments({'userId': userId});
+  List<DocumentStruct> docs = [];
+    if (response.statusCode == 200) {
+      var recievedDocuments = jsonDecode(response.body)['documents'];
+      for (var document in recievedDocuments) {
+        docs.add(DocumentStruct(
+          docId: document['id'].toString(),
+          docName: document['title'],
+          docContent: document['content'],
+          userPermission: document['role'],
+        ));
+      }
+      setState(() {
+        documents = docs;
+        print(documents);
+      });
+    } else {
+      if (mounted) {
+        showSnackBar('Failed to get documents', context);
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    Map<String, dynamic> args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    userInitial = args['initialLetter'];
+    userId = args['userid'].toString();
+    ApiService apiService = ApiService();
+    apiService.getAllUserDocuments({
+      'userId': userId,
+    }).then((response) {
+      if (response.statusCode == 200) {
+        getAllUserDocuments();
+      } else {
+        showSnackBar("Failed to get your dogs!", context);
+      }
+    });
+    super.didChangeDependencies();
+  }
+
+  void _editDocumentName(String newName, int index) {
+    // setState(() {
+    //   documents[index] = newName;
+    // });
   }
 
   @override
@@ -108,7 +144,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
           content: IntrinsicHeight(
             child: Column(
               children: [
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Please enter a new name for the item:',
@@ -126,13 +162,13 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 _editDocumentName(_controller.text, index);
                 Navigator.of(context).pop();
@@ -149,17 +185,17 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Document'),
-          content: Text('Are you sure you want to delete this document?'),
+          title: const Text('Delete Document'),
+          content: const Text('Are you sure you want to delete this document?'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Delete'),
+              child: const Text('Delete'),
               onPressed: () {
                 _removeDocument(index);
                 Navigator.of(context).pop();
@@ -190,12 +226,12 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                 const Text('Dogs'),
                 const Spacer(),
                 const Icon(Icons.apps_rounded),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(left: 12),
                   child: CircleAvatar(
                     backgroundColor: Colors.deepPurple,
                     radius: 17,
-                    child: Text('P'),
+                    child: Text(userInitial.toUpperCase()),
                   ),
                 )
               ],
@@ -242,8 +278,9 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                       ),
                     );
                   }
-                  return Document(
-                    docName: documents[index - 1],
+                  return Expanded(
+                      child: Document(
+                    docName: documents[index - 1].docName,
                     index: index - 1,
                     showRenameDialog: _showRenameDialog,
                     showDeleteDialog: _showDeleteDialog,
