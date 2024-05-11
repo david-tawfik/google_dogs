@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_dogs/services/api_service.dart';
+import 'package:google_dogs/utilities/show_snack_bar.dart';
 import '/screens/signup_screen.dart';
 // import 'package:reddit_bel_ham/services/auth_service.dart';
 import '../components/acknowledgement_text.dart';
@@ -152,7 +154,19 @@ class LoginScreenState extends State<LoginScreen> {
                       isButtonEnabled: isButtonEnabled,
                       onPress: () async {
                         if (isButtonEnabled) {
-                          Navigator.pushNamed(context, DocumentManagerScreen.id);
+                          ApiService apiService = ApiService();
+                          apiService.login({
+                            'email': nameController.text,
+                            'password': passController.text
+                          }).then((response) {
+                            if (response.statusCode == 200) {
+                              showSnackBar("Login Successfull!", context);
+                              Navigator.pushNamed(
+                                  context, DocumentManagerScreen.id);
+                            } else {
+                              showSnackBar("Login Failed!", context);
+                            }
+                          });
                         } else {
                           null;
                         }

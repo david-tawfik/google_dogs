@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-const String baseURL = "http://localhost:5555//api";
+const String baseURL = "http://localhost:5555/api";
 //const String baseURL = "https://e895ac26-6dc5-4b44-8937-20b3ad854396.mock.pstmn.io/api";
 
 class ApiService {
@@ -22,6 +22,7 @@ class ApiService {
       required Map<String, String> headers,
       dynamic body}) async {
     var url = Uri.parse(baseURL + endpoint);
+    print(url);
     http.Response response;
     try {
       switch (method) {
@@ -59,7 +60,7 @@ class ApiService {
         default:
           throw Exception('HTTP method $method not implemented');
       }
-      print(response);
+      print(response.body);
       return response;
     } catch (e) {
       debugPrint("Exception occured: $e");
@@ -103,6 +104,12 @@ class ApiService {
 
   Future<Response> register(Map<String, dynamic> body) async {
     var result = await request('/users/register',
+        headers: header, method: 'POST', body: body);
+    return result;
+  }
+
+  Future<Response> login(Map<String, dynamic> body) async {
+    var result = await request('/users/login',
         headers: header, method: 'POST', body: body);
     return result;
   }
