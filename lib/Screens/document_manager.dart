@@ -1,7 +1,6 @@
-import 'dart:html';
-import 'dart:ui_web';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/screens/text_editor_page.dart';
 import 'package:google_dogs/services/api_service.dart';
@@ -19,56 +18,30 @@ class DocumentManagerScreen extends StatefulWidget {
 
 class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   ApiService apiService = ApiService();
-  List<String> documents = [
-    'Document 1',
-    'Document 2',
-    'Document 3',
-    'Document 4',
-    'Document 5',
-    'Document 6',
-    'Document 7',
-    'Document 8',
-    'Document 9',
-    'Document 10',
-  ];
-  bool firstTime = true;
+  String userInitial = '';
   String userId = '';
-  void _editDocumentName(String newName, int index) {
-    setState(() {
-      documents[index] = newName;
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (firstTime) {
-      final route = ModalRoute.of(context);
-      if (route != null && route.settings.arguments != null) {
-        final Map<String, dynamic> args =
-            route.settings.arguments as Map<String, dynamic>;
-        userId = args['userId'].toString();
-        getAllUserDocuments();
-        firstTime = false;
-      }
-    }
-  }
+  List<DocumentStruct> documents = [];
 
   Future<void> getAllUserDocuments() async {
-    print('getAllUserDocuments $userId');
     setState(() {
       documents.clear();
     });
+    ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
-    List<String> documentNames = [];
-    print(response.statusCode);
+    List<DocumentStruct> docs = [];
     if (response.statusCode == 200) {
       var recievedDocuments = jsonDecode(response.body)['documents'];
       for (var document in recievedDocuments) {
-        documentNames.add(document['title']);
+        docs.add(DocumentStruct(
+          docId: document['id'].toString(),
+          docName: document['title'],
+          docContent: document['content'],
+          userPermission: document['role'],
+        ));
       }
       setState(() {
-        documents = documentNames;
+        documents = docs;
+        print(documents);
       });
     } else {
       if (mounted) {
@@ -77,16 +50,40 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     }
   }
 
+  @override
+  void didChangeDependencies() {
+    Map<String, dynamic> args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    userInitial = args['initialLetter'];
+    userId = args['userId'].toString();
+    ApiService apiService = ApiService();
+    apiService.getAllUserDocuments({
+      'userId': userId,
+    }).then((response) {
+      if (response.statusCode == 200) {
+        getAllUserDocuments();
+      } else {
+        showSnackBar("Failed to get your dogs!", context);
+      }
+    });
+    super.didChangeDependencies();
+  }
+
+  void _editDocumentName(String newName, int index) {
+    // setState(() {
+    //   documents[index] = newName;
+    // });
+  }
+
   Future<void> createDocument() async {
     print('createDocument $userId');
     var response = await apiService.createDocument({'userId': userId});
     print(response);
     if (response.statusCode == 200) {
-      var document = jsonDecode(response.body);
+      var recievedDocument = jsonDecode(response.body);
       setState(() {
-        documents.insert(0, document['title']);
         Navigator.pushNamed(context, TextEditorPage.id,
-            arguments: {"documentId": document['id']});
+            arguments: {"documentId": recievedDocument['id']});
       });
     } else {
       showSnackBar('Failed to create document', context);
@@ -110,7 +107,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
           content: IntrinsicHeight(
             child: Column(
               children: [
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Please enter a new name for the item:',
@@ -128,13 +125,13 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 _editDocumentName(_controller.text, index);
                 Navigator.of(context).pop();
@@ -151,17 +148,17 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Document'),
-          content: Text('Are you sure you want to delete this document?'),
+          title: const Text('Delete Document'),
+          content: const Text('Are you sure you want to delete this document?'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Delete'),
+              child: const Text('Delete'),
               onPressed: () {
                 _removeDocument(index);
                 Navigator.of(context).pop();
@@ -178,35 +175,36 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     return Theme(
       data: ThemeData.dark(),
       child: Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.menu),
+        appBar: AppBar(
+          title: Row(
+            children: [
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.menu),
+              ),
+              const Image(
+                image: AssetImage('assets/images/logo_white.png'),
+                height: 50,
+              ),
+              const Text('Dogs'),
+              const Spacer(),
+              const Icon(Icons.apps_rounded),
+              Padding(
+                padding: EdgeInsets.only(left: 12),
+                child: CircleAvatar(
+                  backgroundColor: Colors.deepPurple,
+                  radius: 17,
+                  child: Text(userInitial.toUpperCase()),
                 ),
-                const Image(
-                  image: AssetImage('assets/images/logo_white.png'),
-                  height: 50,
-                ),
-                const Text('Dogs'),
-                const Spacer(),
-                const Icon(Icons.apps_rounded),
-                const Padding(
-                  padding: EdgeInsets.only(left: 12),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.deepPurple,
-                    radius: 17,
-                    child: Text('P'),
-                  ),
-                )
-              ],
-            ),
+              )
+            ],
           ),
-          body: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: ScreenSizeHandler.screenWidth * 0.12),
-            child: LayoutBuilder(builder: (context, constraints) {
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: ScreenSizeHandler.screenWidth * 0.12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
               return GridView.builder(
                 itemCount: documents.length + 1,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -244,16 +242,20 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                       ),
                     );
                   }
-                  return Document(
-                    docName: documents[index - 1],
-                    index: index - 1,
-                    showRenameDialog: _showRenameDialog,
-                    showDeleteDialog: _showDeleteDialog,
+                  return Expanded(
+                    child: Document(
+                      document: documents[index - 1],
+                      index: index - 1,
+                      showRenameDialog: _showRenameDialog,
+                      showDeleteDialog: _showDeleteDialog,
+                    ),
                   );
                 },
               );
-            }),
-          )),
+            },
+          ),
+        ),
+      ),
     );
   }
 }
