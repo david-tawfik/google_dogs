@@ -119,4 +119,16 @@ class ApiService {
         headers: header, method: 'GET', body: body);
     return result;
   }
+
+  Future<Response> createDocument(Map<String, dynamic> body) async {
+    var result = await request('/documents/createDocument',
+        headers: header, method: 'POST', body: body);
+    return result;
+  }
+
+  Future<Response> getDocumentById(Map<String, dynamic> body) async {
+    var result = await request('/documents/getDocumentById',
+        headers: header, method: 'GET', body: body);
+    return result;
+  }
 }
