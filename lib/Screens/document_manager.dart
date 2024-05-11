@@ -45,7 +45,8 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     if (firstTime) {
       final route = ModalRoute.of(context);
       if (route != null && route.settings.arguments != null) {
-        final Map<String, dynamic> args = route.settings.arguments as Map<String, dynamic>;
+        final Map<String, dynamic> args =
+            route.settings.arguments as Map<String, dynamic>;
         userId = args['userId'].toString();
         getAllUserDocuments();
         firstTime = false;
@@ -59,10 +60,11 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       documents.clear();
     });
     var response = await apiService.getAllUserDocuments({'userId': userId});
+    List<String> documentNames = [];
     print(response.statusCode);
     if (response.statusCode == 200) {
-      var documentNames = jsonDecode(response.body);
-      for (var document in documentNames) {
+      var recievedDocuments = jsonDecode(response.body)['documents'];
+      for (var document in recievedDocuments) {
         documentNames.add(document['title']);
       }
       setState(() {

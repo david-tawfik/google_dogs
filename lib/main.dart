@@ -33,12 +33,9 @@ class GoogleDogs extends StatelessWidget {
           FirstScreen.id: (context) => FirstScreen(),
           SignupScreen.id: (context) => const SignupScreen(),
           LoginScreen.id: (context) => const LoginScreen(),
-          DocumentManagerScreen.id: (context) =>  DocumentManagerScreen(),
+          DocumentManagerScreen.id: (context) => DocumentManagerScreen(),
           TextEditorPage.id: (context) => TextEditorPage(),
         },
-        initialRoute: FirstScreen
-            .id //(token==null)?FirstScreen.id: (JwtDecoder.isExpired(token)) ? LoginScreen.id : HomePageScreen.id,
-        );
+        initialRoute: FirstScreen.id);
   }
 }
-
