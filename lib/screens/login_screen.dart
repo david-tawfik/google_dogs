@@ -162,7 +162,11 @@ class LoginScreenState extends State<LoginScreen> {
                             if (response.statusCode == 200) {
                               showSnackBar("Login Successfull!", context);
                               Navigator.pushNamed(
-                                  context, DocumentManagerScreen.id);
+                                  context, DocumentManagerScreen.id,
+                                  arguments: {
+                                    "initialLetter": nameController.text[0],
+                                    "userid": jsonDecode(response.body)['id']
+                                  });
                             } else {
                               showSnackBar("Login Failed!", context);
                             }
