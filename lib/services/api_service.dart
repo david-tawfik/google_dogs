@@ -113,4 +113,10 @@ class ApiService {
         headers: header, method: 'POST', body: body);
     return result;
   }
+
+    Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
+    var result = await request('/relations/getAllUserDocuments',
+        headers: header, method: 'GET', body: body);
+    return result;
+  }
 }
