@@ -305,7 +305,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                   configurations: quill.QuillEditorConfigurations(
                     controller: _controller,
                     autoFocus: true,
-                    readOnly: false, // true for view only mode
+                    // readOnly: false, // true for view only mode
                     placeholder: 'Add your text here...',
                   ),
                 ),
