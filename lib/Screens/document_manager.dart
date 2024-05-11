@@ -28,7 +28,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     });
     ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
-  List<DocumentStruct> docs = [];
+    List<DocumentStruct> docs = [];
     if (response.statusCode == 200) {
       var recievedDocuments = jsonDecode(response.body)['documents'];
       for (var document in recievedDocuments) {
@@ -55,7 +55,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     Map<String, dynamic> args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     userInitial = args['initialLetter'];
-    userId = args['userid'].toString();
+    userId = args['userId'].toString();
     ApiService apiService = ApiService();
     apiService.getAllUserDocuments({
       'userId': userId,
@@ -75,52 +75,15 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     // });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (firstTime) {
-      final route = ModalRoute.of(context);
-      if (route != null && route.settings.arguments != null) {
-        final Map<String, dynamic> args = route.settings.arguments as Map<String, dynamic>;
-        userId = args['userId'].toString();
-        getAllUserDocuments();
-        firstTime = false;
-      }
-    }
-  }
-
-  Future<void> getAllUserDocuments() async {
-    print('getAllUserDocuments $userId');
-    setState(() {
-      documents.clear();
-    });
-    var response = await apiService.getAllUserDocuments({'userId': userId});
-    print(response.statusCode);
-    if (response.statusCode == 200) {
-      var documentNames = jsonDecode(response.body);
-      for (var document in documentNames) {
-        documentNames.add(document['title']);
-      }
-      setState(() {
-        documents = documentNames;
-      });
-    } else {
-      if (mounted) {
-        showSnackBar('Failed to get documents', context);
-      }
-    }
-  }
-
   Future<void> createDocument() async {
     print('createDocument $userId');
     var response = await apiService.createDocument({'userId': userId});
     print(response);
     if (response.statusCode == 200) {
-      var document = jsonDecode(response.body);
+      var recievedDocument = jsonDecode(response.body);
       setState(() {
-        documents.insert(0, document['title']);
         Navigator.pushNamed(context, TextEditorPage.id,
-            arguments: {"documentId": document['id']});
+            arguments: {"documentId": recievedDocument['id']});
       });
     } else {
       showSnackBar('Failed to create document', context);
@@ -212,35 +175,36 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     return Theme(
       data: ThemeData.dark(),
       child: Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.menu),
+        appBar: AppBar(
+          title: Row(
+            children: [
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.menu),
+              ),
+              const Image(
+                image: AssetImage('assets/images/logo_white.png'),
+                height: 50,
+              ),
+              const Text('Dogs'),
+              const Spacer(),
+              const Icon(Icons.apps_rounded),
+              Padding(
+                padding: EdgeInsets.only(left: 12),
+                child: CircleAvatar(
+                  backgroundColor: Colors.deepPurple,
+                  radius: 17,
+                  child: Text(userInitial.toUpperCase()),
                 ),
-                const Image(
-                  image: AssetImage('assets/images/logo_white.png'),
-                  height: 50,
-                ),
-                const Text('Dogs'),
-                const Spacer(),
-                const Icon(Icons.apps_rounded),
-                Padding(
-                  padding: EdgeInsets.only(left: 12),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.deepPurple,
-                    radius: 17,
-                    child: Text(userInitial.toUpperCase()),
-                  ),
-                )
-              ],
-            ),
+              )
+            ],
           ),
-          body: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: ScreenSizeHandler.screenWidth * 0.12),
-            child: LayoutBuilder(builder: (context, constraints) {
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: ScreenSizeHandler.screenWidth * 0.12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
               return GridView.builder(
                 itemCount: documents.length + 1,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -279,16 +243,19 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                     );
                   }
                   return Expanded(
-                      child: Document(
-                    docName: documents[index - 1].docName,
-                    index: index - 1,
-                    showRenameDialog: _showRenameDialog,
-                    showDeleteDialog: _showDeleteDialog,
+                    child: Document(
+                      document: documents[index - 1],
+                      index: index - 1,
+                      showRenameDialog: _showRenameDialog,
+                      showDeleteDialog: _showDeleteDialog,
+                    ),
                   );
                 },
               );
-            }),
-          )),
+            },
+          ),
+        ),
+      ),
     );
   }
 }
