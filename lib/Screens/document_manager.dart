@@ -3,10 +3,10 @@ import 'package:flutter/widgets.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/screens/text_editor_page.dart';
-import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/screen_size_handler.dart';
 import 'package:google_dogs/components/document.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
+import 'package:google_dogs/utilities/user_id.dart';
 import 'dart:convert';
 
 class DocumentManagerScreen extends StatefulWidget {
@@ -18,14 +18,11 @@ class DocumentManagerScreen extends StatefulWidget {
 
 class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   ApiService apiService = ApiService();
-  String userInitial = '';
+  String userInitial = 'u';
   String userId = '';
   List<DocumentStruct> documents = [];
 
   Future<void> getAllUserDocuments() async {
-    setState(() {
-      documents.clear();
-    });
     ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
     List<DocumentStruct> docs = [];
@@ -41,7 +38,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       }
       setState(() {
         documents = docs;
-        print(documents);
       });
     } else {
       if (mounted) {
@@ -50,29 +46,53 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    Map<String, dynamic> args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    userInitial = args['initialLetter'];
-    userId = args['userId'].toString();
+  Future<void> renameDocument(String docId, String newName) async {
     ApiService apiService = ApiService();
-    apiService.getAllUserDocuments({
-      'userId': userId,
-    }).then((response) {
-      if (response.statusCode == 200) {
-        getAllUserDocuments();
-      } else {
-        showSnackBar("Failed to get your dogs!", context);
+    print('BWAHAHAHAHHHAHAHAHAHAHHAHAHAHHAHAHA');
+    var response =
+        await apiService.renameDocument({"docId": docId, "newTitle": newName});
+    print(response.body);
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+    } else {
+      if (mounted) {
+        showSnackBar('Failed to rename!', context);
       }
-    });
-    super.didChangeDependencies();
+    }
   }
 
-  void _editDocumentName(String newName, int index) {
-    // setState(() {
-    //   documents[index] = newName;
-    // });
+  Future<void> deleteDocument(String docId) async {
+    ApiService apiService = ApiService();
+    var response = await apiService.deleteDocument({'docId': docId});
+    if (response.statusCode == 200) {
+      if (mounted) {
+        setState(() {
+          showSnackBar('Document removed successfully', context);
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          showSnackBar('Failed to remove!', context);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    userId = UserIdStorage.getUserId().toString();
+    Map<String, dynamic> args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    if (args['initialLetter'] != null) {
+      userInitial = args['initialLetter'];
+    }
+    if (mounted) {
+      setState(() {
+        getAllUserDocuments();
+      });
+    }
+    super.didChangeDependencies();
   }
 
   Future<void> createDocument() async {
@@ -88,12 +108,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     } else {
       showSnackBar('Failed to create document', context);
     }
-  }
-
-  void _removeDocument(int index) {
-    setState(() {
-      documents.removeAt(index);
-    });
   }
 
   void _showRenameDialog(BuildContext context, String docName, int index) {
@@ -133,8 +147,12 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                _editDocumentName(_controller.text, index);
-                Navigator.of(context).pop();
+                renameDocument(
+                    documents[index].docId.toString(), _controller.text);
+                setState(() {
+                  documents[index].docName = _controller.text;
+                });
+                Navigator.pop(context);
               },
             ),
           ],
@@ -160,7 +178,10 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
             TextButton(
               child: const Text('Delete'),
               onPressed: () {
-                _removeDocument(index);
+                deleteDocument(documents[index].docId.toString());
+                setState(() {
+                  documents.removeAt(index);
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -242,13 +263,11 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                       ),
                     );
                   }
-                  return Expanded(
-                    child: Document(
-                      document: documents[index - 1],
-                      index: index - 1,
-                      showRenameDialog: _showRenameDialog,
-                      showDeleteDialog: _showDeleteDialog,
-                    ),
+                  return Document(
+                    document: documents[index - 1],
+                    index: index - 1,
+                    showRenameDialog: _showRenameDialog,
+                    showDeleteDialog: _showDeleteDialog,
                   );
                 },
               );
