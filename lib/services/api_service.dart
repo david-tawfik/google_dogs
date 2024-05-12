@@ -159,4 +159,20 @@ class ApiService {
         headers: header, method: 'PATCH', body: body);
     return result;
   }
+
+    Future<Response> renameDocument(Map<String, dynamic> body) async {
+      // print('aaaaaaaa: $body');
+    var result = await request('/documents/renameDocument',
+        headers: header, method: 'PATCH', body: body);
+        // print(result.body);
+        // print(result.statusCode);
+    return result;
+  }
+
+  Future<Response> deleteDocument(Map<String, dynamic> body) async {
+    var result = await request('/documents/deleteDocument',
+        headers: header, method: 'DELETE', body: body);
+    return result;
+  }
 }
+

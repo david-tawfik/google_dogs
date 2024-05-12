@@ -12,6 +12,7 @@ import '../components/continue_button.dart';
 import '../components/logo_text_app_bar.dart';
 import 'dart:convert';
 import '/screens/document_manager.dart';
+import 'package:google_dogs/utilities/user_id.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -160,6 +161,7 @@ class LoginScreenState extends State<LoginScreen> {
                             'password': passController.text
                           }).then((response) {
                             if (response.statusCode == 200) {
+                              UserIdStorage.userId=jsonDecode(response.body)['id'].toString();
                               if (mounted) {
                                 showSnackBar("Login Successfull!", context);
                               }
