@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-const String baseURL = "http://localhost:5555/api";
+// const String baseURL = "http://localhost:5555/api";
+const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
 //const String baseURL = "https://e895ac26-6dc5-4b44-8937-20b3ad854396.mock.pstmn.io/api";
 
 class ApiService {
@@ -133,4 +134,20 @@ class ApiService {
         headers: header, method: 'GET', body: body);
     return result;
   }
+
+    Future<Response> renameDocument(Map<String, dynamic> body) async {
+      // print('aaaaaaaa: $body');
+    var result = await request('/documents/renameDocument',
+        headers: header, method: 'PATCH', body: body);
+        // print(result.body);
+        // print(result.statusCode);
+    return result;
+  }
+
+  Future<Response> deleteDocument(Map<String, dynamic> body) async {
+    var result = await request('/documents/deleteDocument',
+        headers: header, method: 'DELETE', body: body);
+    return result;
+  }
+
 }

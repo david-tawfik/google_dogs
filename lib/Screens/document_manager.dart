@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_dogs/services/api_service.dart';
@@ -23,9 +25,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   List<DocumentStruct> documents = [];
 
   Future<void> getAllUserDocuments() async {
-    setState(() {
-      documents.clear();
-    });
     ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
     List<DocumentStruct> docs = [];
@@ -41,11 +40,49 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       }
       setState(() {
         documents = docs;
-        print(documents);
+        // print(documents);
       });
     } else {
       if (mounted) {
         showSnackBar('Failed to get documents', context);
+      }
+    }
+  }
+
+  Future<void> renameDocument(String docId, String newName) async {
+    ApiService apiService = ApiService();
+    print('BWAHAHAHAHHHAHAHAHAHAHHAHAHAHHAHAHA');
+    var response =
+        await apiService.renameDocument({"docId": docId, "newTitle": newName});
+    print(response.body);
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      if (mounted) {
+        showSnackBar('Document renamed successfully', context);
+      }
+      // var recievedDocuments = jsonDecode(response.body)['documents'];
+      // setState(() {
+
+      // });
+    } else {
+      if (mounted) {
+        showSnackBar('Failed to rename!', context);
+      }
+    }
+  }
+
+
+  Future<void> deleteDocument(String docId) async {
+    ApiService apiService = ApiService();
+    var response =
+        await apiService.deleteDocument({"docId": userId});
+    if (response.statusCode == 200) {
+      if (mounted) {
+        showSnackBar('Document removed successfully', context);
+      }
+    } else {
+      if (mounted) {
+        showSnackBar('Failed to remove!', context);
       }
     }
   }
@@ -56,16 +93,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     userInitial = args['initialLetter'];
     userId = args['userId'].toString();
-    ApiService apiService = ApiService();
-    apiService.getAllUserDocuments({
-      'userId': userId,
-    }).then((response) {
-      if (response.statusCode == 200) {
-        getAllUserDocuments();
-      } else {
-        showSnackBar("Failed to get your dogs!", context);
-      }
-    });
+    getAllUserDocuments();
     super.didChangeDependencies();
   }
 
@@ -133,7 +161,9 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                _editDocumentName(_controller.text, index);
+                // _editDocumentName(_controller.text, index);
+                renameDocument(
+                    documents[index].docId.toString(), _controller.text);
                 Navigator.of(context).pop();
               },
             ),
@@ -160,7 +190,8 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
             TextButton(
               child: const Text('Delete'),
               onPressed: () {
-                _removeDocument(index);
+                deleteDocument(documents[index].docId.toString());
+                // _removeDocument(index);
                 Navigator.of(context).pop();
               },
             ),
