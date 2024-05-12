@@ -8,7 +8,11 @@ import 'package:google_dogs/Screens/document_manager.dart';
 import 'package:google_dogs/components/continue_button.dart';
 import 'package:google_dogs/components/credentials_text_field.dart';
 import 'package:google_dogs/constants.dart';
+import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/email_regex.dart';
+import 'package:google_dogs/utilities/show_snack_bar.dart';
+import 'package:google_dogs/utilities/screen_size_handler.dart';
+import 'dart:convert';
 
 class TextEditorPage extends StatefulWidget {
   static const String id = 'text_editor';
@@ -30,6 +34,44 @@ class _TextEditorPageState extends State<TextEditorPage> {
   TextEditingController _emailController = TextEditingController();
   bool isValid = false;
   String selectedPermission = 'Editor';
+  String documentId = '';
+  ApiService apiService = ApiService();
+  String documentTitle = '';
+  String content = '';
+  String role = '';
+  String creatorId = '';
+  String creatorEmail = '';
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    final Map<String, dynamic>? args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    setState(() {
+    documentId = args!['documentId'].toString();
+    getDocument();
+      
+    });
+
+  }
+
+  Future<void> getDocument() async {
+    var response = await apiService.getDocumentById({'docId':documentId});
+    if (response.statusCode == 200) {
+      var document = jsonDecode(response.body);
+      setState(() {
+        documentTitle = document['title'];
+        content = document['content'];
+        role = document['role'];
+        creatorId = document['createdBy']['id'].toString();
+        creatorEmail = document['createdBy']['email'];
+      });
+      print(documentTitle);
+    } else {
+      showSnackBar('Failed to get document', context);
+    }
+  }
 
   final quill.QuillController _controller = quill.QuillController.basic();
 
@@ -48,7 +90,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
             data: ThemeData.light(),
             child: Scaffold(
               appBar: AppBar(
-                title: Text('Text Editor'),
+                title: Text(documentTitle),
                 backgroundColor: Colors.deepPurple[200],
                 actions: [
                   IconButton(
@@ -106,7 +148,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                           return Theme(
                             data: ThemeData.dark(),
                             child: AlertDialog(
-                              title: Text("Share '$name'", style: TextStyle(fontWeight: FontWeight.w500),),
+                              title: Text("Share '$documentTitle'", style: TextStyle(fontWeight: FontWeight.w500),),
                               content: StatefulBuilder(
                                 builder:
                                     (BuildContext context, StateSetter setState) {
@@ -174,7 +216,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                         alignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Icon(Icons.person),
-                                          Text('nardo@gmail.com'),
+                                          Text(creatorEmail),
                                           Text('Owner', style: TextStyle(fontSize: 13.0, color: Colors.grey[400]),)
                                         ]
                                       ),
@@ -305,7 +347,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                   configurations: quill.QuillEditorConfigurations(
                     controller: _controller,
                     autoFocus: true,
-                    readOnly: false, // true for view only mode
+                    // readOnly: false, // true for view only mode
                     placeholder: 'Add your text here...',
                   ),
                 ),

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_dogs/Screens/document_manager.dart';
+import 'package:google_dogs/services/api_service.dart';
+import 'package:google_dogs/utilities/show_snack_bar.dart';
+import 'package:http/http.dart';
 import '/screens/login_screen.dart';
 import '../components/acknowledgement_text.dart';
 import '../utilities/screen_size_handler.dart';
@@ -26,7 +30,6 @@ class SignupScreenState extends State<SignupScreen> {
   bool isButtonEnabled = false;
   bool isValidEmail = true;
   bool isValidPassword = true;
-
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +65,12 @@ class SignupScreenState extends State<SignupScreen> {
                     const AcknowledgementText(),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*7,
-                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio*2),
+                          horizontal: ScreenSizeHandler.screenWidth *
+                              kButtonWidthRatio *
+                              7,
+                          vertical: ScreenSizeHandler.screenHeight *
+                              kButtonHeightRatio *
+                              2),
                       child: CredentialsTextField(
                         key: const Key('signup_screen_email_text_field'),
                         controller: nameController,
@@ -71,10 +78,10 @@ class SignupScreenState extends State<SignupScreen> {
                         isValid: isValidEmail,
                         text: 'Email',
                         prefixIcon: isValidEmail && isNameFocused
-                            ?const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.green,
-                                )
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: Colors.green,
+                              )
                             : null,
                         suffixIcon: isNameFocused
                             ? IconButton(
@@ -95,21 +102,21 @@ class SignupScreenState extends State<SignupScreen> {
                         onChanged: (value) {
                           setState(() {
                             isValidEmail = isEmailValid(value);
-                            isButtonEnabled = isValidEmail && isValidPassword && isPassFocused && isNameFocused;
+                            isButtonEnabled = isValidEmail &&
+                                isValidPassword &&
+                                isPassFocused &&
+                                isNameFocused;
                             isNameFocused = value.isNotEmpty;
                             if (value.isNotEmpty &&
                                 passController.text.isNotEmpty) {
-                              setState(() {
-                              });
+                              setState(() {});
                             } else {
                               if (value.isEmpty) {
                                 setState(() {
                                   isValidEmail = true;
                                 });
                               }
-                              setState(() {
-                        
-                              });
+                              setState(() {});
                             }
                           });
                         },
@@ -120,14 +127,18 @@ class SignupScreenState extends State<SignupScreen> {
                       visible: !isValidEmail,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio*6),
+                            left: ScreenSizeHandler.screenWidth *
+                                kErrorMessageLeftPaddingRatio *
+                                6),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Please enter a valid email address',
                             style: TextStyle(
                               color: kErrorColor,
-                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio*0.7,
+                              fontSize: ScreenSizeHandler.smaller *
+                                  kErrorMessageSmallerFontRatio *
+                                  0.7,
                             ),
                           ),
                         ),
@@ -135,19 +146,23 @@ class SignupScreenState extends State<SignupScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: ScreenSizeHandler.screenWidth * kButtonWidthRatio*7,
-                          vertical: ScreenSizeHandler.screenHeight * kButtonHeightRatio*2),
+                          horizontal: ScreenSizeHandler.screenWidth *
+                              kButtonWidthRatio *
+                              7,
+                          vertical: ScreenSizeHandler.screenHeight *
+                              kButtonHeightRatio *
+                              2),
                       child: CredentialsTextField(
                         key: const Key('signup_screen_password_text_field'),
                         controller: passController,
                         isObscure: isPassObscure,
                         isValid: isValidPassword,
                         text: 'Password',
-                    prefixIcon: isValidPassword && isPassFocused
+                        prefixIcon: isValidPassword && isPassFocused
                             ? const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.green,
-                                )
+                                Icons.check_rounded,
+                                color: Colors.green,
+                              )
                             : null,
                         suffixIcon: isPassFocused
                             ? IconButton(
@@ -164,19 +179,20 @@ class SignupScreenState extends State<SignupScreen> {
                           setState(() {
                             isValidPassword = value.length >= 8;
                             isPassFocused = value.isNotEmpty;
-                            isButtonEnabled = isValidEmail && isValidPassword && isPassFocused && isNameFocused;
+                            isButtonEnabled = isValidEmail &&
+                                isValidPassword &&
+                                isPassFocused &&
+                                isNameFocused;
                             if (value.isNotEmpty &&
                                 nameController.text.isNotEmpty) {
-                              setState(() {
-                              });
+                              setState(() {});
                             } else {
                               if (value.isEmpty) {
                                 setState(() {
                                   // isValidPassword = true;
                                 });
                               }
-                              setState(() {
-                              });
+                              setState(() {});
                             }
                           });
                         },
@@ -187,14 +203,19 @@ class SignupScreenState extends State<SignupScreen> {
                       visible: !isValidPassword || isPassFocused,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            left: ScreenSizeHandler.screenWidth * kErrorMessageLeftPaddingRatio*6),
+                            left: ScreenSizeHandler.screenWidth *
+                                kErrorMessageLeftPaddingRatio *
+                                6),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Password must be at least 8 characters',
                             style: TextStyle(
-                              color: isValidPassword? Colors.green: kErrorColor,
-                              fontSize: ScreenSizeHandler.smaller * kErrorMessageSmallerFontRatio*0.7,
+                              color:
+                                  isValidPassword ? Colors.green : kErrorColor,
+                              fontSize: ScreenSizeHandler.smaller *
+                                  kErrorMessageSmallerFontRatio *
+                                  0.7,
                             ),
                           ),
                         ),
@@ -206,6 +227,18 @@ class SignupScreenState extends State<SignupScreen> {
                       isButtonEnabled: isButtonEnabled,
                       onPress: () async {
                         if (isButtonEnabled) {
+                          ApiService apiService = ApiService();
+                          Response response = await apiService.register({
+                            'email': nameController.text,
+                            'password': passController.text
+                          });
+                          if (response.statusCode == 200) {
+                            Navigator.pushNamed(
+                                context, DocumentManagerScreen.id);
+                            showSnackBar("Sign up successfull!", context);
+                          } else {
+                            showSnackBar("Error in signing up!", context);
+                          }
                         } else {
                           null;
                         }
