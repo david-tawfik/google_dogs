@@ -16,7 +16,7 @@ dependencies:
   flutter_link_previewer: ^3.2.2
   url_launcher: ^6.0.9
   flutter_quill: ^9.3.7
-  
+  socket_io_client: ^2.0.3+1
   
 dev_dependencies:
   flutter_test:
