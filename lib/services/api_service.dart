@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-// const String baseURL = "http://localhost:5555/api";
-const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
+const String baseURL = "http://localhost:5555/api";
+// const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
 
 class ApiService {
   String token = '';
@@ -134,6 +134,32 @@ class ApiService {
     return result;
   }
 
+  Future<Response> addUserToDocument(Map<String, dynamic> body) async {
+    var result = await request('/relations/addUsertoDocument',
+        headers: header, method: 'POST', body: body);
+    return result;
+  }
+
+  Future<Response> getUsersFromDocumentID(Map<String, dynamic> body) async {
+    print(body);
+    var result = await request('/relations/getUsersFromDocumentId',
+        headers: header, method: 'GET', body: body);
+    return result;
+  }
+
+  Future<Response> updateUserRole(Map<String, dynamic> body) async {
+    var result = await request('/relations/updateUserRole',
+        headers: header, method: 'PATCH', body: body);
+    return result;
+  }
+  
+  Future<Response> updateDocumentContent(Map<String, dynamic> body) async {
+    print(body);
+    var result = await request('/documents/updateDocumentContent',
+        headers: header, method: 'PATCH', body: body);
+    return result;
+  }
+
     Future<Response> renameDocument(Map<String, dynamic> body) async {
       // print('aaaaaaaa: $body');
     var result = await request('/documents/renameDocument',
@@ -148,5 +174,5 @@ class ApiService {
         headers: header, method: 'DELETE', body: body);
     return result;
   }
-
 }
+
