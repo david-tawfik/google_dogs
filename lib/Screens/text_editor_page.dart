@@ -49,6 +49,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
   String creatorId = '';
   String creatorEmail = '';
   List<User> users = [];
+  bool isReadOnly =true;
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -136,9 +137,12 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
-        _controller.document =
-            quill.Document.fromJson(jsonDecode(document['content']));
+        if (document['content'] != null && document['content'].isNotEmpty) {
+          _controller.document =
+              quill.Document.fromJson(jsonDecode(document['content']));
+        }
         role = document['role'];
+        // isReadOnly = role == 'viewer';
         creatorId = document['createdBy']['id'].toString();
         creatorEmail = document['createdBy']['email'];
       });
@@ -491,12 +495,16 @@ class _TextEditorPageState extends State<TextEditorPage> {
               body: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: AbsorbPointer(
-                  absorbing: role == 'viewer' ? true : false,
+                  absorbing: isReadOnly,
+
                   child: quill.QuillEditor.basic(
+
+
                     focusNode: _editorFocusNode,
                     configurations: quill.QuillEditorConfigurations(
+                      
                       controller: _controller,
-                      autoFocus: false, // role != 'viewer',
+                      autoFocus: false,
                       // readOnly: false, // true for view only mode
                       placeholder: 'Add your text here...',
                     ),
