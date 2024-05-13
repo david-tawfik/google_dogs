@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_dogs/Screens/text_editor_page.dart';
 import 'package:google_dogs/constants.dart';
+import 'package:google_dogs/utilities/show_snack_bar.dart';
 
 class DocumentStruct{
   String docId;
@@ -16,7 +17,7 @@ class DocumentStruct{
   });
 }
 
-class Document extends StatelessWidget {
+class Document extends StatefulWidget {
   const Document({
     super.key,
     required this.document,
@@ -30,11 +31,16 @@ class Document extends StatelessWidget {
   final Function(int) showDeleteDialog;
 
   @override
+  State<Document> createState() => _DocumentState();
+}
+
+class _DocumentState extends State<Document> {
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, TextEditorPage.id, arguments: {
-          'documentId': document.docId,
+          'documentId': widget.document.docId,
         });
       },
       child: Column(
@@ -55,7 +61,7 @@ class Document extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Text(
-                      document.docName,
+                      widget.document.docName,
                       style: const TextStyle(fontSize: 11),
                     ),
                   ),
@@ -87,13 +93,22 @@ class Document extends StatelessWidget {
                           ),
                           Offset.zero & overlay.size,
                         );
+                        if (widget.document.userPermission == 'viewer') {
+                          setState(() {
+                            
+                          showSnackBar('Viewers are not allowed to rename or delete', context);
+                          });
+                       
+                        }
+                        else{
+
                         showMenu(
                             context: context,
                             position: position,
                             items: <PopupMenuEntry>[
                               PopupMenuItem(
                                 onTap: () {
-                                  showRenameDialog(context, document.docName, index);
+                                  widget.showRenameDialog(context, widget.document.docName, widget.index);
                                 },
                                 height: 40,
                                 child: const Row(
@@ -111,7 +126,7 @@ class Document extends StatelessWidget {
                               ),
                               PopupMenuItem(
                                 onTap: () {
-                                  showDeleteDialog(index);
+                                  widget.showDeleteDialog(widget.index);
                                 },
                                 height: 40,
                                 child: Row(
@@ -125,6 +140,7 @@ class Document extends StatelessWidget {
                                 ),
                               ),
                             ]);
+                        }
                       },
                       child: const Icon(
                         Icons.more_vert,

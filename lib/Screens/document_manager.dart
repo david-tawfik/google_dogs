@@ -86,11 +86,11 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   @override
   void didChangeDependencies() {
     userId = UserIdStorage.getUserId().toString();
-    Map<String, dynamic> args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    if (args['initialLetter'] != null) {
-      userInitial = args['initialLetter'];
-    }
+    // Map<String, dynamic> args =
+    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    // if (args['initialLetter'] != null) {
+    //   userInitial = args['initialLetter'];
+    // }
     if (mounted) {
       setState(() {
         getAllUserDocuments();
@@ -270,7 +270,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                   return Document(
                     document: documents[index - 1],
                     index: index - 1,
-                    showRenameDialog: _showRenameDialog,
+                    showRenameDialog:  _showRenameDialog,
                     showDeleteDialog: _showDeleteDialog,
                   );
                 },
