@@ -16,6 +16,7 @@ dependencies:
   flutter_link_previewer: ^3.2.2
   url_launcher: ^6.0.9
   flutter_quill: ^9.3.7
+  stomp_dart_client: ^2.0.0
   
   
 dev_dependencies:

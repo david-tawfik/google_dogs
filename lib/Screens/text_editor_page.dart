@@ -1,18 +1,18 @@
 import 'dart:html';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:google_dogs/Screens/document_manager.dart';
-import 'package:google_dogs/components/continue_button.dart';
-import 'package:google_dogs/components/credentials_text_field.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/email_regex.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
-import 'package:google_dogs/utilities/screen_size_handler.dart';
+import 'package:stomp_dart_client/stomp_dart_client.dart';
 import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/html.dart';
+
+const String websocketURL = 'ws://localhost:5555/collab';
+// const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
 class User {
   final String email;
@@ -49,7 +49,47 @@ class _TextEditorPageState extends State<TextEditorPage> {
   String creatorId = '';
   String creatorEmail = '';
   List<User> users = [];
-  bool isReadOnly =true;
+  bool isReadOnly = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> connect() async {
+    final stompClient = StompClient(
+      config: StompConfig(
+        url: websocketURL,
+        onConnect: (StompFrame frame) {
+          print('Connected to WebSocket!');
+          // Subscribe to topics after connection is established
+          //subscribeToTopic();
+        },
+        onDisconnect: (StompFrame frame) {
+          print('Disconnected from WebSocket!');
+        },
+        onWebSocketError: (dynamic error) {
+          print('WebSocket error: $error');
+        },
+      ),
+    );
+    stompClient.activate();
+  }
+
+  // void subscribeToTopic() {
+  //   stompClient.subscribe(
+  //       destination: '/topic/your-topic-name', // Replace with your topic name
+  //       onMessage: (StompFrame frame) {
+  //         print('Received message: ${frame.body}');
+  //         // Handle incoming messages
+  //       });
+  // }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -496,13 +536,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
                 padding: EdgeInsets.all(16.0),
                 child: AbsorbPointer(
                   absorbing: isReadOnly,
-
                   child: quill.QuillEditor.basic(
-
-
                     focusNode: _editorFocusNode,
                     configurations: quill.QuillEditorConfigurations(
-                      
                       controller: _controller,
                       autoFocus: false,
                       // readOnly: false, // true for view only mode
