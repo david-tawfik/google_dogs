@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_dogs/Screens/document_manager.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
+import 'package:google_dogs/utilities/user_id.dart';
 import 'package:http/http.dart';
 import '/screens/login_screen.dart';
 import '../components/acknowledgement_text.dart';
@@ -11,7 +12,7 @@ import '../components/credentials_text_field.dart';
 import '../components/continue_button.dart';
 import '../components/logo_text_app_bar.dart';
 import '../utilities/email_regex.dart';
-
+import 'dart:convert';
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
 
@@ -233,8 +234,10 @@ class SignupScreenState extends State<SignupScreen> {
                             'password': passController.text
                           });
                           if (response.statusCode == 200) {
+                            UserIdStorage.setUserId(
+                                jsonDecode(response.body)['id'].toString());
                             Navigator.pushNamed(
-                                context, DocumentManagerScreen.id);
+                                context, DocumentManagerScreen.id,arguments: {"initialLetter": nameController.text[0]});
                             showSnackBar("Sign up successfull!", context);
                           } else {
                             showSnackBar("Error in signing up!", context);

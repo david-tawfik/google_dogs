@@ -14,6 +14,8 @@ import 'package:web_socket_channel/html.dart';
 const String websocketURL = 'ws://localhost:5555/collab';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
+import 'package:google_dogs/utilities/user_id.dart';
+
 class User {
   final String email;
   String permission;
@@ -90,6 +92,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     super.dispose();
   }
 
+
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -100,7 +103,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
       documentId = args!['documentId'].toString();
       getDocument();
       getUsersFromDocumentID();
-      _editorFocusNode.unfocus();
     });
   }
 
@@ -130,6 +132,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       'email': email,
       'docId': docId,
       'newRole': role,
+      'userId': UserIdStorage.getUserId(),
     });
     if (response.statusCode == 200) {
       showSnackBar('User role updated', context);
@@ -146,6 +149,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       'email': email,
       'docId': docId,
       'role': role,
+      'userId': UserIdStorage.getUserId(),
     });
     if (response.statusCode == 200) {
       showSnackBar('User added to document', context);
@@ -172,7 +176,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   Future<void> getDocument() async {
-    var response = await apiService.getDocumentById({'docId': documentId});
+    var response = await apiService.getDocumentById(
+        {'docId': documentId, 'userId': UserIdStorage.getUserId()});
     if (response.statusCode == 200) {
       var document = jsonDecode(response.body);
       setState(() {
@@ -182,7 +187,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
               quill.Document.fromJson(jsonDecode(document['content']));
         }
         role = document['role'];
-        // isReadOnly = role == 'viewer';
+        print('Role: $role');
+        isReadOnly = role == 'viewer' ? true : false;
+        if (role == 'viewer') {
+          _editorFocusNode.unfocus();
+        } else {
+          _editorFocusNode.requestFocus();
+        }
         creatorId = document['createdBy']['id'].toString();
         creatorEmail = document['createdBy']['email'];
       });
@@ -284,6 +295,17 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                         decoration: const InputDecoration(
                                           hintText: 'Add people',
                                         ),
+                                        onTap: () {
+                                          role == 'viewer'
+                                              ? setState(() {
+                                                  showSnackBar(
+                                                      'You do not have permission to add users',
+                                                      context);
+                                                })
+                                              : null;
+                                        },
+                                        readOnly:
+                                            role == 'viewer' ? true : false,
                                         onChanged: (value) {
                                           setState(() {
                                             isValid = isEmailValid(value);
@@ -308,7 +330,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                       AlignmentDirectional
                                                           .center,
                                                   isDense: true,
-                                                  padding: EdgeInsets.symmetric(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                       horizontal: 10.0,
                                                       vertical: 5.0),
                                                   items: const [
@@ -336,10 +359,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                 ),
                                               ),
                                             )
-                                          : SizedBox(
+                                          : const SizedBox(
                                               height: 34.0,
                                             ),
-                                      Align(
+                                      const Align(
                                           alignment: Alignment.centerLeft,
                                           child: Text(
                                             'People with access',
@@ -393,8 +416,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                             AlignmentDirectional
                                                                 .center,
                                                         isDense: true,
-                                                        padding: EdgeInsets
-                                                            .symmetric(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
                                                                 horizontal:
                                                                     10.0,
                                                                 vertical: 5.0),
@@ -411,20 +435,26 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                           ),
                                                         ],
                                                         onChanged: (value) {
-                                                          setState(() {
-                                                            users[index]
-                                                                    .permission =
-                                                                value
-                                                                    .toString();
-                                                            updateUserRole(
-                                                                users[index]
-                                                                    .email,
-                                                                documentId,
-                                                                users[index]
-                                                                    .permission);
-                                                            permissionFocusNode
-                                                                .unfocus();
-                                                          });
+                                                          role == 'viewer'
+                                                              ? setState(() {
+                                                                  showSnackBar(
+                                                                      'You do not have permission to add users',
+                                                                      context);
+                                                                })
+                                                              : setState(() {
+                                                                  users[index]
+                                                                          .permission =
+                                                                      value
+                                                                          .toString();
+                                                                  updateUserRole(
+                                                                      users[index]
+                                                                          .email,
+                                                                      documentId,
+                                                                      users[index]
+                                                                          .permission);
+                                                                  permissionFocusNode
+                                                                      .unfocus();
+                                                                });
                                                         },
                                                         value: users[index]
                                                             .permission,
@@ -447,48 +477,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                   );
                                 },
                               ),
-                              // Column(
-                              //   children: [
-                              //     TextField(
-                              //       controller: _emailController,
-                              //       decoration: const InputDecoration(
-                              //         hintText: 'Add people',
-                              //       ),
-                              //       onChanged: (value) {
-                              //         setState(() {
-                              //           isValid = isEmailValid(value);
-                              //         });
-                              //       },
-                              //     ),
-                              //      Visibility(
-                              //         visible: isValid,
-                              //        child: DropdownButton(
-                              //               items:const [
-                              //                 DropdownMenuItem(
-                              //                   value: 'Editor',
-                              //                   child: Text('Editor'),
-                              //                 ),
-                              //                 DropdownMenuItem(
-                              //                   value: 'Viewer',
-                              //                   child: Text('Viewer'),
-                              //                 ),
-                              //               ],
-                              //               onChanged: (value) {},
-                              //             ),
-                              //      )
-                              //         // : Text(
-                              //         //     'Please enter a valid email address',
-                              //         //     style: TextStyle(color: Colors.red),
-                              //         //   ),
-                              //   ],
-                              // ),
                               actions: <Widget>[
-                                TextButton(
-                                  child: Text('Copy Link'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
                                 TextButton(
                                   style: ButtonStyle(
                                     foregroundColor: MaterialStateProperty.all(
@@ -496,7 +485,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                     backgroundColor: MaterialStateProperty.all(
                                         Colors.deepPurple[200]),
                                   ),
-                                  child: Text('Done'),
+                                  child: const Text('Done'),
                                   onPressed: () {
                                     if (isValid) {
                                       setState(
@@ -509,6 +498,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                         },
                                       );
                                     }
+                                    Navigator.pop(context);
                                   },
                                 ),
                               ],
@@ -517,7 +507,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                         },
                       );
                     },
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.share,
                       color: Colors.black,
                     ),
