@@ -49,20 +49,19 @@ class _TextEditorPageState extends State<TextEditorPage> {
     final Map<String, dynamic>? args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     setState(() {
-    documentId = args!['documentId'].toString();
-    getDocument();
-      
+      documentId = args!['documentId'].toString();
+      getDocument();
+      _editorFocusNode.unfocus();
     });
-
   }
 
   Future<void> getDocument() async {
-    var response = await apiService.getDocumentById({'docId':documentId});
+    var response = await apiService.getDocumentById({'docId': documentId});
     if (response.statusCode == 200) {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
-        content = document['content'];
+        // content = document['content'];
         role = document['role'];
         creatorId = document['createdBy']['id'].toString();
         creatorEmail = document['createdBy']['email'];
@@ -80,7 +79,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
     return Theme(
       data: ThemeData.dark(),
       child: Scaffold(
-        
         body: Container(
           margin: EdgeInsets.symmetric(horizontal: 100.0, vertical: 8.0),
           decoration: BoxDecoration(
@@ -103,14 +101,15 @@ class _TextEditorPageState extends State<TextEditorPage> {
                       focusNode: boldFocusNode,
                       onPressed: () {
                         setState(() {
-                          final selectionStyle = _controller.getSelectionStyle();
+                          final selectionStyle =
+                              _controller.getSelectionStyle();
                           isBold = !selectionStyle.containsKey('bold');
                           _futureTextIsBold = isBold;
                           if (isBold) {
                             _controller.formatSelection(quill.Attribute.bold);
                           } else {
-                            _controller.formatSelection(
-                                quill.Attribute.clone(quill.Attribute.bold, null));
+                            _controller.formatSelection(quill.Attribute.clone(
+                                quill.Attribute.bold, null));
                           }
                           _editorFocusNode.requestFocus();
                         });
@@ -125,9 +124,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
                       ),
                       onPressed: () {
                         setState(() {
-                          final selectionStyle = _controller.getSelectionStyle();
+                          final selectionStyle =
+                              _controller.getSelectionStyle();
                           isItalic = !selectionStyle.containsKey('italic');
-                  
+
                           if (isItalic) {
                             _controller.formatSelection(quill.Attribute.italic);
                           } else {
@@ -148,10 +148,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
                           return Theme(
                             data: ThemeData.dark(),
                             child: AlertDialog(
-                              title: Text("Share '$documentTitle'", style: TextStyle(fontWeight: FontWeight.w500),),
+                              title: Text(
+                                "Share '$documentTitle'",
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
                               content: StatefulBuilder(
-                                builder:
-                                    (BuildContext context, StateSetter setState) {
+                                builder: (BuildContext context,
+                                    StateSetter setState) {
                                   return Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -167,98 +170,119 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                           });
                                         },
                                       ),
-                                      isValid?
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton(
-                                            focusNode: selectorFocusNode,
-                                            iconEnabledColor: Colors.deepPurple[200],
-                                            style: TextStyle(
-                                              fontSize: 13.0,
-                                              color: Colors.deepPurple[200],
-                                      
+                                      isValid
+                                          ? Align(
+                                              alignment: Alignment.centerRight,
+                                              child:
+                                                  DropdownButtonHideUnderline(
+                                                child: DropdownButton(
+                                                  focusNode: selectorFocusNode,
+                                                  iconEnabledColor:
+                                                      Colors.deepPurple[200],
+                                                  style: TextStyle(
+                                                    fontSize: 13.0,
+                                                    color:
+                                                        Colors.deepPurple[200],
+                                                  ),
+                                                  alignment:
+                                                      AlignmentDirectional
+                                                          .center,
+                                                  isDense: true,
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 10.0,
+                                                      vertical: 5.0),
+                                                  items: const [
+                                                    DropdownMenuItem(
+                                                      value: 'Editor',
+                                                      child: Text('Editor'),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'Viewer',
+                                                      child: Text('Viewer'),
+                                                    ),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      selectedPermission =
+                                                          value.toString();
+                                                      selectorFocusNode
+                                                          .unfocus();
+                                                    });
+                                                  },
+                                                  value: selectedPermission,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20.0),
+                                                ),
+                                              ),
+                                            )
+                                          : SizedBox(
+                                              height: 34.0,
                                             ),
-                                            alignment: AlignmentDirectional.center,
-                                            isDense: true,
-                                            padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                                            items: const [
-                                              DropdownMenuItem(
-                                                value: 'Editor',
-                                                child: Text('Editor'),
-                                              ),
-                                              DropdownMenuItem(
-                                                value: 'Viewer',
-                                                child: Text('Viewer'),
-                                              ),
-                                            ],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                selectedPermission = value.toString();
-                                                selectorFocusNode.unfocus();
-                                      
-                                              });
-                                            },
-                                            value: selectedPermission,
-                                            borderRadius: BorderRadius.circular(20.0),
-                                          ),
-                                        ),
-                                      )
-                                      :
-                                      SizedBox(
-                                        height: 34.0,
-                                      ),
                                       Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text('People with access',style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600),
-                                        )),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'People with access',
+                                            style: TextStyle(
+                                                fontSize: 14.0,
+                                                fontWeight: FontWeight.w600),
+                                          )),
                                       ButtonBar(
-                                        alignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Icon(Icons.person),
-                                          Text(creatorEmail),
-                                          Text('Owner', style: TextStyle(fontSize: 13.0, color: Colors.grey[400]),)
-                                        ]
-                                      ),
+                                          alignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Icon(Icons.person),
+                                            Text(creatorEmail),
+                                            Text(
+                                              'Owner',
+                                              style: TextStyle(
+                                                  fontSize: 13.0,
+                                                  color: Colors.grey[400]),
+                                            )
+                                          ]),
                                       ButtonBar(
-                                        alignment: MainAxisAlignment.spaceBetween,
+                                        alignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Icon(Icons.person),
                                           Text('dave@gmail.com'),
                                           DropdownButtonHideUnderline(
-                                          child: DropdownButton(
-                                            focusNode: permissionFocusNode,
-                                            iconEnabledColor: Colors.deepPurple[200],
-                                            style: TextStyle(
-                                              fontSize: 13.0,
-                                              color: Colors.deepPurple[200],
+                                            child: DropdownButton(
+                                              focusNode: permissionFocusNode,
+                                              iconEnabledColor:
+                                                  Colors.deepPurple[200],
+                                              style: TextStyle(
+                                                fontSize: 13.0,
+                                                color: Colors.deepPurple[200],
+                                              ),
+                                              alignment:
+                                                  AlignmentDirectional.center,
+                                              isDense: true,
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 10.0,
+                                                  vertical: 5.0),
+                                              items: const [
+                                                DropdownMenuItem(
+                                                  value: 'Editor',
+                                                  child: Text('Editor'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'Viewer',
+                                                  child: Text('Viewer'),
+                                                ),
+                                              ],
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  selectedPermission =
+                                                      value.toString();
+                                                  permissionFocusNode.unfocus();
+                                                });
+                                              },
+                                              value: selectedPermission,
+                                              borderRadius:
+                                                  BorderRadius.circular(20.0),
                                             ),
-                                            alignment: AlignmentDirectional.center,
-                                            isDense: true,
-                                            padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                                            items: const [
-                                              DropdownMenuItem(
-                                                value: 'Editor',
-                                                child: Text('Editor'),
-                                              ),
-                                              DropdownMenuItem(
-                                                value: 'Viewer',
-                                                child: Text('Viewer'),
-                                              ),
-                                            ],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                selectedPermission = value.toString();
-                                                permissionFocusNode.unfocus();
-                                      
-                                              });
-                                            },
-                                            value: selectedPermission,
-                                            borderRadius: BorderRadius.circular(20.0),
                                           ),
-                                        ),
-                                         
-                            
                                         ],
                                       )
                                     ],
@@ -309,8 +333,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                 ),
                                 TextButton(
                                   style: ButtonStyle(
-                                    foregroundColor:
-                                        MaterialStateProperty.all(kBackgroundColor),
+                                    foregroundColor: MaterialStateProperty.all(
+                                        kBackgroundColor),
                                     backgroundColor: MaterialStateProperty.all(
                                         Colors.deepPurple[200]),
                                   ),
@@ -342,13 +366,16 @@ class _TextEditorPageState extends State<TextEditorPage> {
               ),
               body: Padding(
                 padding: EdgeInsets.all(16.0),
-                child: quill.QuillEditor.basic(
-                  focusNode: _editorFocusNode,
-                  configurations: quill.QuillEditorConfigurations(
-                    controller: _controller,
-                    autoFocus: true,
-                    // readOnly: false, // true for view only mode
-                    placeholder: 'Add your text here...',
+                child: AbsorbPointer(
+                  absorbing: role == 'viewer' ? true : false,
+                  child: quill.QuillEditor.basic(
+                    focusNode: _editorFocusNode,
+                    configurations: quill.QuillEditorConfigurations(
+                      controller: _controller,
+                      autoFocus: false,// role != 'viewer',
+                      // readOnly: false, // true for view only mode
+                      placeholder: 'Add your text here...',
+                    ),
                   ),
                 ),
               ),
