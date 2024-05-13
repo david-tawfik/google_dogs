@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_dogs/Screens/text_editor_page.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
 import '/screens/signup_screen.dart';
@@ -12,6 +13,7 @@ import '../components/continue_button.dart';
 import '../components/logo_text_app_bar.dart';
 import 'dart:convert';
 import '/screens/document_manager.dart';
+import 'package:google_dogs/utilities/user_id.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -160,14 +162,16 @@ class LoginScreenState extends State<LoginScreen> {
                             'password': passController.text
                           }).then((response) {
                             if (response.statusCode == 200) {
+                              UserIdStorage.userId=jsonDecode(response.body)['id'].toString();
                               if (mounted) {
                                 showSnackBar("Login Successfull!", context);
                               }
+                              UserIdStorage.setUserId(jsonDecode(response.body)['id'].toString());
                               Navigator.pushNamed(
                                   context, DocumentManagerScreen.id,
                                   arguments: {
                                     "initialLetter": nameController.text[0],
-                                    "userId": jsonDecode(response.body)['id']
+                                    // "userId": jsonDecode(response.body)['id']
                                   });
                             } else {
                               if (mounted) {
