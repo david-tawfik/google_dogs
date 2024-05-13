@@ -436,41 +436,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                   );
                                 },
                               ),
-                              // Column(
-                              //   children: [
-                              //     TextField(
-                              //       controller: _emailController,
-                              //       decoration: const InputDecoration(
-                              //         hintText: 'Add people',
-                              //       ),
-                              //       onChanged: (value) {
-                              //         setState(() {
-                              //           isValid = isEmailValid(value);
-                              //         });
-                              //       },
-                              //     ),
-                              //      Visibility(
-                              //         visible: isValid,
-                              //        child: DropdownButton(
-                              //               items:const [
-                              //                 DropdownMenuItem(
-                              //                   value: 'Editor',
-                              //                   child: Text('Editor'),
-                              //                 ),
-                              //                 DropdownMenuItem(
-                              //                   value: 'Viewer',
-                              //                   child: Text('Viewer'),
-                              //                 ),
-                              //               ],
-                              //               onChanged: (value) {},
-                              //             ),
-                              //      )
-                              //         // : Text(
-                              //         //     'Please enter a valid email address',
-                              //         //     style: TextStyle(color: Colors.red),
-                              //         //   ),
-                              //   ],
-                              // ),
                               actions: <Widget>[
                                 TextButton(
                                   style: ButtonStyle(
