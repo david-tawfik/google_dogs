@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_dogs/Screens/text_editor_page.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
 import '/screens/signup_screen.dart';
@@ -165,11 +166,12 @@ class LoginScreenState extends State<LoginScreen> {
                               if (mounted) {
                                 showSnackBar("Login Successfull!", context);
                               }
+                              UserIdStorage.setUserId(jsonDecode(response.body)['id'].toString());
                               Navigator.pushNamed(
                                   context, DocumentManagerScreen.id,
                                   arguments: {
                                     "initialLetter": nameController.text[0],
-                                    "userId": jsonDecode(response.body)['id']
+                                    // "userId": jsonDecode(response.body)['id']
                                   });
                             } else {
                               if (mounted) {
