@@ -64,7 +64,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   Future<void> getUsersFromDocumentID() async {
-    var response = await apiService.getUsersFromDocumentID({'docId': documentId});
+    var response =
+        await apiService.getUsersFromDocumentID({'docId': documentId});
 
     if (response.statusCode == 200) {
       var usersList = jsonDecode(response.body)['users'];
@@ -80,7 +81,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
     } else {
       showSnackBar('Failed to get users', context);
     }
-
   }
 
   Future<void> updateUserRole(email, docId, role) async {
@@ -120,7 +120,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
   Future<void> updateDocumentContent() async {
     var response = await apiService.updateDocumentContent({
       'docId': documentId,
-      'content':  jsonEncode(_controller.document.toDelta().toJson()),
+      'content': jsonEncode(_controller.document.toDelta().toJson()),
     });
     print(response);
     if (response.statusCode == 200) {
@@ -136,7 +136,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
-        _controller.document = quill.Document.fromJson(jsonDecode(document['content']));
+        _controller.document =
+            quill.Document.fromJson(jsonDecode(document['content']));
         role = document['role'];
         creatorId = document['createdBy']['id'].toString();
         creatorEmail = document['createdBy']['email'];
@@ -371,7 +372,12 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                                     .permission =
                                                                 value
                                                                     .toString();
-                                                            updateUserRole(users[index].email, documentId, users[index].permission);
+                                                            updateUserRole(
+                                                                users[index]
+                                                                    .email,
+                                                                documentId,
+                                                                users[index]
+                                                                    .permission);
                                                             permissionFocusNode
                                                                 .unfocus();
                                                           });
@@ -490,7 +496,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                     focusNode: _editorFocusNode,
                     configurations: quill.QuillEditorConfigurations(
                       controller: _controller,
-                      autoFocus: false,// role != 'viewer',
+                      autoFocus: false, // role != 'viewer',
                       // readOnly: false, // true for view only mode
                       placeholder: 'Add your text here...',
                     ),
