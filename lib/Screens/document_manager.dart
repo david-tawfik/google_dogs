@@ -36,9 +36,13 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
           userPermission: document['role'],
         ));
       }
+      if (mounted)
+      {
+
       setState(() {
         documents = docs;
       });
+      }
     } else {
       if (mounted) {
         showSnackBar('Failed to get documents', context);
