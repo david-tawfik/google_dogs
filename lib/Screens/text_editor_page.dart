@@ -277,6 +277,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
       print('hohohoho');
+      print(change.change.toList());
       if (change.change.toList().last.isInsert) {
         handleLocalInsert(change);
       } else if (change.change.toList().last.isDelete) {
@@ -302,6 +303,37 @@ class _TextEditorPageState extends State<TextEditorPage> {
         position = operation.length!;
       } else if (operation.isInsert) {
         character = operation.data.toString();
+      }
+    }
+
+    void handleLocalBold(quill.DocChange change) {
+      if (!isLocalChange) {
+        return;
+      }
+      print("CHANGE");
+      final operations = change.change.toList();
+      print(operations);
+
+      int position = 0;
+      int length = 0;
+      bool isBold = false;
+      bool isItalic = false;
+
+      for (var operation in operations) {
+        if (operation.isRetain) {
+          if (operation.attributes != null) {
+            isBold = operation.attributes!.containsKey('bold');
+            isItalic = operation.attributes!.containsKey('italic');
+            length = operation.length!;
+          } else {
+            position = operation.length!;
+          }
+        }
+      }
+
+      if (isBold || isItalic) {
+        print("Bold or Italic change at position: $position, length: $length");
+        // Emit event or perform action here
       }
     }
 
@@ -394,7 +426,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     // Create a delta representing the delete operation
     quillDelta.Delta delta = quillDelta.Delta()
       // Move the cursor to the desired position
-      ..retain(index-1)
+      ..retain(index - 1)
       ..delete(1);
     // Apply the delta to the document
     isLocalChange = false;
