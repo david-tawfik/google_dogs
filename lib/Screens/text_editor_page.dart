@@ -224,8 +224,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
                             _controller.formatSelection(quill.Attribute.clone(
                                 quill.Attribute.italic, null));
                           }
-                          // boldFocusNode.unfocus();
-                          // _controller.moveCursorToEnd();
                           _editorFocusNode.requestFocus();
                         });
                       },
@@ -343,10 +341,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                             )
                                           ]),
                                       if (users.isNotEmpty)
-                                        // ListView.builder(
-                                        // itemCount: users.length,
-                                        // itemBuilder: (BuildContext context, int index)
-                                        // {
                                         SingleChildScrollView(
                                           physics:
                                               AlwaysScrollableScrollPhysics(),
@@ -424,14 +418,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                                     ),
                                                   ],
                                                 )
-                                              // ;
                                             ],
                                           ),
                                         )
-
-                                      // },
-
-                                      // ),
                                     ],
                                   );
                                 },
