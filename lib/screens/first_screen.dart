@@ -12,7 +12,7 @@ class FirstScreen extends StatefulWidget {
     super.key,
   });
 
-  static const String id = 'first_screen';
+  static const String id = '/';
 
   @override
   State<FirstScreen> createState() => _FirstScreenState();
