@@ -18,7 +18,7 @@ import 'package:google_dogs/utilities/user_id.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
-  static const String id = 'login_screen';
+  static const String id = '/login';
 
   @override
   LoginScreenState createState() => LoginScreenState();

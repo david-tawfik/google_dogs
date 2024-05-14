@@ -16,7 +16,7 @@ import 'dart:convert';
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
 
-  static const String id = 'signup_screen';
+  static const String id = '/signup';
 
   @override
   SignupScreenState createState() => SignupScreenState();
