@@ -324,8 +324,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
     print('Insert event received: $data');
     // Parse the received data
     String character = data[0];
-    double siteID = double.parse(data[1]);
-    double fractionalID = double.parse(data[2]);
+    double siteID = double.parse(data[1].toString());
+    double fractionalID = double.parse(data[2].toString());
     bool isBold = data[3];
     bool isItalic = data[4];
 
@@ -353,22 +353,49 @@ class _TextEditorPageState extends State<TextEditorPage> {
       return;
     }
     print("DELETE");
-    print(change.change.toList());
-    final operation = change.change.toList().last;
-    if (operation.isDelete) {
-      int index = int.parse(operation.data.toString());
-      socket.emit("delete", [documentId, index]);
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        position = operation.length!;
+      } else if (operation.isDelete) {
+        position += operation.length!;
+      }
     }
+
+    CRDTNode justDeleted = crdt!.localDelete(position);
+
+    print("Delete position: $position");
+    socket.emit("delete", [
+      documentId,
+      justDeleted.character,
+      justDeleted.siteID.toString(),
+      justDeleted.fractionalID.toString(),
+      justDeleted.isBold,
+      justDeleted.isItalic
+    ]);
   }
 
   void handleRemoteDelete(data) {
     print('Delete event received: $data');
     // Parse the received data
-    int index = data[0];
+    CRDTNode newNode = CRDTNode(
+      double.parse(data[1].toString()),
+      double.parse(data[2].toString()),
+      data[0],
+      data[3],
+      data[4],
+    );
+
+    int index = crdt!.remoteDelete(newNode);
     // Create a delta representing the delete operation
     quillDelta.Delta delta = quillDelta.Delta()
       // Move the cursor to the desired position
-      ..delete(index);
+      ..retain(index-1)
+      ..delete(1);
     // Apply the delta to the document
     isLocalChange = false;
     if (mounted) {
