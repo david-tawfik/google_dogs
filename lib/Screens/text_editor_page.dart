@@ -23,6 +23,17 @@ class User {
   User({required this.email, required this.permission});
 }
 
+class CharCRDT {
+  String value;
+  double farctionalId;
+  double globalId;
+
+  CharCRDT(
+      {required this.value,
+      required this.farctionalId,
+      required this.globalId});
+}
+
 class TextEditorPage extends StatefulWidget {
   static const String id = 'text_editor';
   @override
@@ -52,6 +63,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
   String creatorEmail = '';
   List<User> users = [];
   bool isReadOnly = true;
+  List<CharCRDT> chars = [
+    CharCRDT(value: 'a', farctionalId: 0, globalId: 1000),
+    CharCRDT(value: 'b', farctionalId: 0, globalId: 1001),
+    CharCRDT(value: 'c', farctionalId: 0, globalId: 1002),
+  ];
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -62,6 +78,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       documentId = args!['documentId'].toString();
       getDocument();
       getUsersFromDocumentID();
+      print('JSON ENCODED: ${jsonEncode(chars)}');
     });
   }
 
