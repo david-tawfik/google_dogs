@@ -24,7 +24,7 @@ class User {
 }
 
 class CRDTNode {
-  final String siteID;
+  final double siteID;
   final double fractionalID;
   final String character;
   final bool isBold;
@@ -45,29 +45,59 @@ class CRDTNode {
 }
 
 class CRDT {
-  final String siteId;
-  final List<CRDTNode> struct;
+  double siteId;
+  List<CRDTNode> struct;
 
-  CRDT(this.siteId)
-      : struct = [
-          CRDTNode(siteId, 0.0, '', false, false),
-          CRDTNode(siteId, 5000.0, '', false, false)
+  CRDT(String docId)
+      : siteId = double.parse(docId),
+        struct = [
+          CRDTNode(
+            DateTime.now().millisecondsSinceEpoch.toDouble(),
+            0.0,
+            '',
+            false,
+            false,
+          ),
+          CRDTNode(
+            DateTime.now().millisecondsSinceEpoch.toDouble() + 1,
+            5000.0,
+            '',
+            false,
+            false,
+          ),
         ];
 
   CRDTNode localInsert(String value, int index) {
+    print("BEFORE");
+    for (var i = 0; i < struct.length; i++) {
+      print(struct[i].fractionalID);
+    }
+
+    print('local');
     final char = generateChar(value, index);
-    struct.insert(index, char);
+    print("passed");
+    struct.insert(index + 1, char);
+    print("AFTER");
+    for (var i = 0; i < struct.length; i++) {
+      print(struct[i].fractionalID);
+    }
     return char;
   }
 
   CRDTNode generateChar(String value, int index) {
     // Your logic for generating a CRDTNode with fractionalID goes here
     // Use the index and adjacent nodes' positions to calculate fractionalID
-    double fractionalId = (struct[index-1].fractionalID + struct[index+1].fractionalID) / 2; 
-    double globalId = DateTime.now().millisecondsSinceEpoch.toDouble(); // TODO: ADD USER ID
+    print(index);
+    print(struct[index].fractionalID);
+    print(struct[index + 1].fractionalID);
+    double fractionalId =
+        (struct[index].fractionalID + struct[index + 1].fractionalID) / 2;
+    print(fractionalId);
+    double globalId =
+        DateTime.now().millisecondsSinceEpoch.toDouble(); // TODO: ADD USER ID
     return CRDTNode(
-      siteId,
-      fractionalId, 
+      globalId,
+      fractionalId,
       value,
       false,
       false,
@@ -78,9 +108,10 @@ class CRDT {
     return struct.removeAt(index);
   }
 
-  void remoteInsert(CRDTNode char) {
+  Map<String, dynamic> remoteInsert(CRDTNode char) {
     final index = findInsertIndex(char);
     struct.insert(index, char);
+    return {'char': char.character, 'index': index};
   }
 
   int remoteDelete(CRDTNode char) {
@@ -146,7 +177,7 @@ class CRDT {
       }
     }
 
-    return -1; // Not found
+    return -1;
   }
 }
 
@@ -184,14 +215,68 @@ class _TextEditorPageState extends State<TextEditorPage> {
   bool isLocalChange = true;
   StreamSubscription<quill.DocChange>? _changeSubscription;
 
-  List<CRDTNode> document = [];
+  CRDT? crdt;
 
   late IO.Socket socket;
+
+  void crdtToQuill(List<CRDTNode> crdts) {
+    print('started function');
+    final length = crdts.length;
+    print(crdts);
+    for (var i = 0; i < length; i++) {
+      final crdt = crdts[i];
+      var style = quill.Style();
+      if (crdt.isBold) {
+        style = style.put(quill.Attribute.bold);
+      }
+      if (crdt.isItalic) {
+        style = style.put(quill.Attribute.italic);
+      }
+      print(i);
+      print('inserting');
+      print("Size: ${_controller.document.length}");
+      // Ensure that crdt.character is a String
+      String character = crdt.character.toString();
+      // Check if character is not empty
+      if (character.isNotEmpty) {
+        // Use the compose method to insert the character with styling
+
+        _controller.document.compose(
+            quillDelta.Delta()..insert(character, style.attributes),
+            quill.ChangeSource.local);
+      }
+      print('after insert');
+    }
+  }
+
+  void updateQuill(String char, int index, bool isBold, bool isItalic) {
+    var style = quill.Style();
+    if (isBold) {
+      style = style.put(quill.Attribute.bold);
+    }
+    if (isItalic) {
+      style = style.put(quill.Attribute.italic);
+    }
+    print('inserting');
+    print("Size: ${_controller.document.length}");
+    // Ensure that crdt.character is a String
+    if (char.isNotEmpty) {
+      // Use the compose method to insert the character with styling
+
+      _controller.document.compose(
+          quillDelta.Delta()
+            ..retain(index - 1)
+            ..insert(char, style.attributes),
+          quill.ChangeSource.local);
+    }
+    print('after insert');
+  }
 
   @override
   void initState() {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
+      print('hohohoho');
       if (change.change.toList().last.isInsert) {
         handleLocalInsert(change);
       } else if (change.change.toList().last.isDelete) {
@@ -206,21 +291,31 @@ class _TextEditorPageState extends State<TextEditorPage> {
       return;
     }
     print("CHANGE");
-    print(change.change.toList());
-    final operation = change.change.toList().last;
-    if (operation.isInsert) {
-      final siteID = Uuid().v4();
-      final fractionalID = 0.0;
-      final character = operation.data;
-      final crdt =
-          CRDTNode(siteID, fractionalID, character.toString(), false, false);
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    String? character;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        position = operation.length!;
+      } else if (operation.isInsert) {
+        character = operation.data.toString();
+      }
+    }
+
+    if (character != null) {
+      print("here");
+      CRDTNode justInserted = crdt!.localInsert(character, position);
+      //crdtToQuill(crdt!.struct);
       socket.emit("insert", [
         documentId,
-        crdt.character,
-        crdt.siteID,
-        crdt.fractionalID,
-        crdt.isBold,
-        crdt.isItalic
+        justInserted.character,
+        justInserted.siteID.toString(),
+        justInserted.fractionalID.toString(),
+        justInserted.isBold,
+        justInserted.isItalic
       ]);
     }
   }
@@ -229,24 +324,23 @@ class _TextEditorPageState extends State<TextEditorPage> {
     print('Insert event received: $data');
     // Parse the received data
     String character = data[0];
-    String siteID = data[1];
-    String fractionalID = data[2];
+    double siteID = double.parse(data[1]);
+    double fractionalID = double.parse(data[2]);
     bool isBold = data[3];
     bool isItalic = data[4];
-    // Create a delta representing the insert operation
-    print(_controller.document.length);
-    quillDelta.Delta delta = quillDelta.Delta()
-      ..retain(_controller.document.length -
-          1) // Move the cursor to the desired position
-      ..insert(character, {
-        if (isBold) 'bold': true,
-        if (isItalic) 'italic': true,
-      });
+
+    // Insert the character into the CRDT structure
+    CRDTNode newNode =
+        CRDTNode(siteID, fractionalID, character, isBold, isItalic);
+    var result = crdt!.remoteInsert(newNode);
+    var returnedChar = result['char'];
+    var returnedIndex = result['index'];
+
     // Apply the delta to the document
     isLocalChange = false;
     if (mounted) {
       setState(() {
-        _controller.document.compose(delta, quill.ChangeSource.remote);
+        updateQuill(returnedChar, returnedIndex, isBold, isItalic);
       });
     }
     Future.microtask(() {
@@ -262,21 +356,19 @@ class _TextEditorPageState extends State<TextEditorPage> {
     print(change.change.toList());
     final operation = change.change.toList().last;
     if (operation.isDelete) {
-      final length = operation.length;
-      socket.emit("delete", [documentId, length]);
+      int index = int.parse(operation.data.toString());
+      socket.emit("delete", [documentId, index]);
     }
   }
 
   void handleRemoteDelete(data) {
     print('Delete event received: $data');
     // Parse the received data
-    int length = data[0];
+    int index = data[0];
     // Create a delta representing the delete operation
     quillDelta.Delta delta = quillDelta.Delta()
-      ..retain(_controller.document.length -
-          length -
-          1) // Move the cursor to the desired position
-      ..delete(length);
+      // Move the cursor to the desired position
+      ..delete(index);
     // Apply the delta to the document
     isLocalChange = false;
     if (mounted) {
@@ -315,6 +407,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       getDocument();
       getUsersFromDocumentID();
     });
+    crdt = CRDT(documentId);
     connect();
   }
 
