@@ -1,20 +1,20 @@
-import 'dart:html';
+import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:google_dogs/Screens/document_manager.dart';
-import 'package:google_dogs/components/continue_button.dart';
-import 'package:google_dogs/components/credentials_text_field.dart';
+import 'package:flutter_quill/quill_delta.dart' as quillDelta;
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/utilities/email_regex.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
-import 'package:google_dogs/utilities/screen_size_handler.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
-
 import 'package:google_dogs/utilities/user_id.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:io';
+
+const String webSocketURL = 'http://localhost:3000';
+// const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
 class User {
   final String email;
@@ -23,8 +23,170 @@ class User {
   User({required this.email, required this.permission});
 }
 
+class CRDTNode {
+  final double siteID;
+  final double fractionalID;
+  final String character;
+  final bool isBold;
+  final bool isItalic;
+
+  CRDTNode(this.siteID, this.fractionalID, this.character, this.isBold,
+      this.isItalic);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'siteID': siteID,
+      'fractionalID': fractionalID,
+      'character': character,
+      'isBold': isBold,
+      'isItalic': isItalic,
+    };
+  }
+}
+
+class CRDT {
+  double siteId;
+  List<CRDTNode> struct;
+
+  CRDT(String docId)
+      : siteId = double.parse(docId),
+        struct = [
+          CRDTNode(
+            DateTime.now().millisecondsSinceEpoch.toDouble(),
+            0.0,
+            '',
+            false,
+            false,
+          ),
+          CRDTNode(
+            DateTime.now().millisecondsSinceEpoch.toDouble() + 1,
+            5000.0,
+            '',
+            false,
+            false,
+          ),
+        ];
+
+  CRDTNode localInsert(String value, int index) {
+    print("BEFORE");
+    for (var i = 0; i < struct.length; i++) {
+      print(struct[i].fractionalID);
+    }
+
+    print('local');
+    final char = generateChar(value, index);
+    print("passed");
+    struct.insert(index + 1, char);
+    print("AFTER");
+    for (var i = 0; i < struct.length; i++) {
+      print(struct[i].fractionalID);
+    }
+    return char;
+  }
+
+  CRDTNode generateChar(String value, int index) {
+    // Your logic for generating a CRDTNode with fractionalID goes here
+    // Use the index and adjacent nodes' positions to calculate fractionalID
+    print(index);
+    print(struct[index].fractionalID);
+    print(struct[index + 1].fractionalID);
+    double fractionalId =
+        (struct[index].fractionalID + struct[index + 1].fractionalID) / 2;
+    print(fractionalId);
+    double globalId =
+        DateTime.now().millisecondsSinceEpoch.toDouble(); // TODO: ADD USER ID
+    return CRDTNode(
+      globalId,
+      fractionalId,
+      value,
+      false,
+      false,
+    );
+  }
+
+  CRDTNode localDelete(int index) {
+    return struct.removeAt(index);
+  }
+
+  Map<String, dynamic> remoteInsert(CRDTNode char) {
+    final index = findInsertIndex(char);
+    struct.insert(index, char);
+    return {'char': char.character, 'index': index};
+  }
+
+  void remoteBold(){}
+
+  int remoteDelete(CRDTNode char) {
+    final index = findIndexByPosition(char);
+    if (index != -1) {
+      struct.removeAt(index);
+    }
+    return index;
+  }
+
+  int findInsertIndex(CRDTNode char) {
+    // Implement binary search or other suitable algorithm to find insert index
+    // based on fractionalID
+    // Example:
+    int low = 0;
+    int high = struct.length - 1;
+
+    while (low <= high) {
+      int mid = (low + high) ~/ 2;
+      int compareResult = comparePositions(struct[mid], char);
+
+      if (compareResult == 0) {
+        return mid; // Found equal position, insert here
+      } else if (compareResult < 0) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return low; // Insert at the end if not found
+  }
+
+  int comparePositions(CRDTNode a, CRDTNode b) {
+    // Compare fractional IDs of CRDTNodes
+    // Example:
+    if (a.fractionalID == b.fractionalID) {
+      return 0;
+    } else if (a.fractionalID < b.fractionalID) {
+      return -1;
+    } else {
+      return 1;
+    }
+  }
+
+  int findIndexByPosition(CRDTNode char) {
+    // Implement binary search or other suitable algorithm to find index by position
+    // based on fractionalID
+    // Example:
+    int low = 0;
+    int high = struct.length - 1;
+
+    while (low <= high) {
+      int mid = (low + high) ~/ 2;
+      int compareResult = comparePositions(struct[mid], char);
+
+      if (compareResult == 0) {
+        return mid; // Found, return index
+      } else if (compareResult < 0) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return -1;
+  }
+}
+
 class TextEditorPage extends StatefulWidget {
-  static const String id = 'text_editor';
+  static const String id = '/test-editor';
+
+  const TextEditorPage({super.key});
   @override
   _TextEditorPageState createState() => _TextEditorPageState();
 }
@@ -52,6 +214,249 @@ class _TextEditorPageState extends State<TextEditorPage> {
   String creatorEmail = '';
   List<User> users = [];
   bool isReadOnly = true;
+  bool isLocalChange = true;
+  StreamSubscription<quill.DocChange>? _changeSubscription;
+
+  CRDT? crdt;
+
+  late IO.Socket socket;
+
+  void crdtToQuill(List<CRDTNode> crdts) {
+    print('started function');
+    final length = crdts.length;
+    print(crdts);
+    for (var i = 0; i < length; i++) {
+      final crdt = crdts[i];
+      var style = quill.Style();
+      if (crdt.isBold) {
+        style = style.put(quill.Attribute.bold);
+      }
+      if (crdt.isItalic) {
+        style = style.put(quill.Attribute.italic);
+      }
+      print(i);
+      print('inserting');
+      print("Size: ${_controller.document.length}");
+      // Ensure that crdt.character is a String
+      String character = crdt.character.toString();
+      // Check if character is not empty
+      if (character.isNotEmpty) {
+        // Use the compose method to insert the character with styling
+
+        _controller.document.compose(
+            quillDelta.Delta()..insert(character, style.attributes),
+            quill.ChangeSource.local);
+      }
+      print('after insert');
+    }
+  }
+
+  void updateQuill(String char, int index, bool isBold, bool isItalic) {
+    var style = quill.Style();
+    if (isBold) {
+      style = style.put(quill.Attribute.bold);
+    }
+    if (isItalic) {
+      style = style.put(quill.Attribute.italic);
+    }
+    print('inserting');
+    print("Size: ${_controller.document.length}");
+    // Ensure that crdt.character is a String
+    if (char.isNotEmpty) {
+      // Use the compose method to insert the character with styling
+
+      _controller.document.compose(
+          quillDelta.Delta()
+            ..retain(index - 1)
+            ..insert(char, style.attributes),
+          quill.ChangeSource.local);
+    }
+    print('after insert');
+  }
+
+  @override
+  void initState() {
+    _changeSubscription =
+        _controller.document.changes.listen((quill.DocChange change) {
+      print('hohohoho');
+      print(change.change.toList());
+      if (change.change.toList().last.isInsert) {
+        handleLocalInsert(change);
+      } else if (change.change.toList().last.isDelete) {
+        handleLocalDelete(change);
+      }
+    });
+    super.initState();
+  }
+
+  void handleLocalInsert(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("CHANGE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    String? character;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        position = operation.length!;
+      } else if (operation.isInsert) {
+        character = operation.data.toString();
+      }
+    }
+
+    void handleLocalBold(quill.DocChange change) {
+      if (!isLocalChange) {
+        return;
+      }
+      print("CHANGE");
+      final operations = change.change.toList();
+      print(operations);
+
+      int position = 0;
+      int length = 0;
+      bool isBold = false;
+      bool isItalic = false;
+
+      for (var operation in operations) {
+        if (operation.isRetain) {
+          if (operation.attributes != null) {
+            isBold = operation.attributes!.containsKey('bold');
+            isItalic = operation.attributes!.containsKey('italic');
+            length = operation.length!;
+          } else {
+            position = operation.length!;
+          }
+        }
+      }
+
+      if (isBold || isItalic) {
+        print("Bold or Italic change at position: $position, length: $length");
+        // Emit event or perform action here
+      }
+    }
+
+    if (character != null) {
+      print("here");
+      CRDTNode justInserted = crdt!.localInsert(character, position);
+      //crdtToQuill(crdt!.struct);
+      socket.emit("insert", [
+        documentId,
+        justInserted.character,
+        justInserted.siteID.toString(),
+        justInserted.fractionalID.toString(),
+        justInserted.isBold,
+        justInserted.isItalic
+      ]);
+    }
+  }
+
+  void handleRemoteInsert(data) {
+    print('Insert event received: $data');
+    // Parse the received data
+    String character = data[0];
+    double siteID = double.parse(data[1].toString());
+    double fractionalID = double.parse(data[2].toString());
+    bool isBold = data[3];
+    bool isItalic = data[4];
+
+    // Insert the character into the CRDT structure
+    CRDTNode newNode =
+        CRDTNode(siteID, fractionalID, character, isBold, isItalic);
+    var result = crdt!.remoteInsert(newNode);
+    var returnedChar = result['char'];
+    var returnedIndex = result['index'];
+
+    // Apply the delta to the document
+    isLocalChange = false;
+    if (mounted) {
+      setState(() {
+        updateQuill(returnedChar, returnedIndex, isBold, isItalic);
+      });
+    }
+    Future.microtask(() {
+      isLocalChange = true;
+    });
+  }
+
+  void handleLocalDelete(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("DELETE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        position = operation.length!;
+      } else if (operation.isDelete) {
+        position += operation.length!;
+      }
+    }
+
+    CRDTNode justDeleted = crdt!.localDelete(position);
+
+    print("Delete position: $position");
+    socket.emit("delete", [
+      documentId,
+      justDeleted.character,
+      justDeleted.siteID.toString(),
+      justDeleted.fractionalID.toString(),
+      justDeleted.isBold,
+      justDeleted.isItalic
+    ]);
+  }
+
+  void handleRemoteDelete(data) {
+    print('Delete event received: $data');
+    // Parse the received data
+    CRDTNode newNode = CRDTNode(
+      double.parse(data[1].toString()),
+      double.parse(data[2].toString()),
+      data[0],
+      data[3],
+      data[4],
+    );
+
+    int index = crdt!.remoteDelete(newNode);
+    // Create a delta representing the delete operation
+    quillDelta.Delta delta = quillDelta.Delta()
+      // Move the cursor to the desired position
+      ..retain(index - 1)
+      ..delete(1);
+    // Apply the delta to the document
+    isLocalChange = false;
+    if (mounted) {
+      setState(() {
+        _controller.document.compose(delta, quill.ChangeSource.remote);
+      });
+    }
+    Future.microtask(() {
+      isLocalChange = true;
+    });
+  }
+
+  void connect() {
+    socket = IO.io(webSocketURL, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+    // Connect to the server
+    socket.connect();
+    // Join the room corresponding to the document ID
+    socket.emit("join", [documentId]);
+    // Handle 'insert' events
+    socket.on('insert', handleRemoteInsert);
+    // Handle 'delete' events
+    socket.on('delete', handleRemoteDelete);
+  }
+
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -63,6 +468,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
       getDocument();
       getUsersFromDocumentID();
     });
+    crdt = CRDT(documentId);
+    connect();
   }
 
   Future<void> getUsersFromDocumentID() async {

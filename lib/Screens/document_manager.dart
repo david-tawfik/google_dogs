@@ -10,7 +10,7 @@ import 'package:google_dogs/utilities/user_id.dart';
 import 'dart:convert';
 
 class DocumentManagerScreen extends StatefulWidget {
-  static const String id = 'document_manager_screen';
+  static const String id = '/document_manager';
   DocumentManagerScreen({super.key});
   @override
   State<DocumentManagerScreen> createState() => _DocumentManagerScreenState();
