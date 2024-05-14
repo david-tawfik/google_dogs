@@ -114,6 +114,8 @@ class CRDT {
     return {'char': char.character, 'index': index};
   }
 
+  void remoteBold(){}
+
   int remoteDelete(CRDTNode char) {
     final index = findIndexByPosition(char);
     if (index != -1) {
