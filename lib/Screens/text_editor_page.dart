@@ -23,18 +23,18 @@ class User {
 }
 
 class CRDTNode {
-  double siteID;
+  double uniqueId;
   double fractionalID;
   String character;
   bool isBold;
   bool isItalic;
 
-  CRDTNode(this.siteID, this.fractionalID, this.character, this.isBold,
+  CRDTNode(this.uniqueId, this.fractionalID, this.character, this.isBold,
       this.isItalic);
 
   Map<String, dynamic> toJson() {
     return {
-      'siteID': siteID,
+      'uniqueId': uniqueId,
       'fractionalID': fractionalID,
       'character': character,
       'isBold': isBold,
@@ -129,7 +129,7 @@ class CRDT {
 
   List<int> remoteBold(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isBold = true;
       updatedIndices.add(index - 1);
@@ -139,7 +139,7 @@ class CRDT {
 
   List<int> remoteUnbold(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isBold = false;
       updatedIndices.add(index - 1);
@@ -149,7 +149,7 @@ class CRDT {
 
   List<int> remoteItalic(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isItalic = true;
       updatedIndices.add(index - 1);
@@ -159,7 +159,7 @@ class CRDT {
 
   List<int> remoteUnitalic(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isItalic = false;
       updatedIndices.add(index - 1);
@@ -350,12 +350,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
     // Ensure that crdt.character is a String
     if (char.isNotEmpty) {
       // Use the compose method to insert the character with styling
+      print(index);
 
       _controller.document.compose(
           quillDelta.Delta()
             ..retain(index - 1)
             ..insert(char, style.attributes),
-          quill.ChangeSource.local);
+          quill.ChangeSource.remote);
     }
     print('after insert');
   }
@@ -380,6 +381,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       } else if (lastOperation.isRetain && lastOperation.attributes != null) {
         if (lastOperation.attributes!.containsKey('bold')) {
           if (lastOperation.attributes!['bold'] != null) {
+            print('etba3 henaaa');
             handleLocalBold(change);
           } else {
             handleLocalUnbold(change);
@@ -449,7 +451,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       socket.emit("insert", [
         documentId,
         justInserted.character,
-        justInserted.siteID.toString(),
+        justInserted.uniqueId.toString(),
         justInserted.fractionalID.toString(),
         justInserted.isBold,
         justInserted.isItalic
@@ -458,9 +460,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalBold(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -488,14 +490,15 @@ class _TextEditorPageState extends State<TextEditorPage> {
       print("Bold change at position: $position, length: $length");
       List<CRDTNode> updatedNodes = crdt!.localBold(position, length);
       print(updatedNodes[0].character);
+      print('etba3 henaa');
       socket.emit("update", [documentId, "bold", updatedNodes]);
     }
   }
 
   void handleLocalUnbold(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -524,9 +527,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalItalic(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -555,9 +558,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalUnitalic(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -593,6 +596,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
     double fractionalID = double.parse(data[2].toString());
     bool isBold = data[3];
     bool isItalic = data[4];
+
+    for (var i = 0; i < crdt!.struct.length; i++) {
+      print(crdt!.struct[i].fractionalID);
+    }
 
     // Insert the character into the CRDT structure
     CRDTNode newNode =
@@ -637,7 +644,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.emit("delete", [
       documentId,
       justDeleted.character,
-      justDeleted.siteID.toString(),
+      justDeleted.uniqueId.toString(),
       justDeleted.fractionalID.toString(),
       justDeleted.isBold,
       justDeleted.isItalic
@@ -709,7 +716,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     List<int> updatedIndices = [];
 
     updatedNodes.forEach((node) {
-      int uniqueId = node['siteID'];
+      int uniqueId = node['uniqueId'];
       switch (updateType) {
         case 'bold':
           updatedIndices = crdt!.remoteBold(uniqueId);
@@ -799,13 +806,16 @@ class _TextEditorPageState extends State<TextEditorPage> {
       ));
     }
     // Update the Quill editor with the received content
-    crdt!.struct = crdts.reversed.toList();
+    crdt!.struct = crdts.reversed.toList(); //TA3ALA HENA TANYY
     isLocalChange = false;
     if (mounted) {
       setState(() {
         crdtToQuill(crdts);
       });
     }
+
+    crdt!.struct = crdts;
+
     // Future.microtask(() {
     //   isLocalChange = true;
     // });
