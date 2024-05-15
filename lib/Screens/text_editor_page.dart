@@ -290,7 +290,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
   List<User> users = [];
   bool isReadOnly = true;
   bool isLocalChange = true;
-  bool isFromCrdtToQuill = false;
   StreamSubscription<quill.DocChange>? _changeSubscription;
 
   CRDT? crdt;
@@ -304,13 +303,12 @@ class _TextEditorPageState extends State<TextEditorPage> {
     super.dispose();
   }
 
-  void crdtToQuill(List<CRDTNode> crdts) {
+  void crdtToQuill(
+    List<CRDTNode> crdts,
+  ) {
     print('started function');
     final length = crdts.length;
     print(crdts);
-
-    // Create a new Quill document
-    var doc = quill.Document();
 
     for (var i = 0; i < length; i++) {
       final crdt = crdts[i];
@@ -323,24 +321,20 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
       print(i);
       print('inserting');
-      print("Size: ${doc.length}");
+      print("Size: ${_controller.document.length}");
 
       // Ensure that crdt.character is a String
       String character = crdt.character.toString();
 
-      // Check if character is not empty
+      // Check if character is not emptyF
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
-        doc.compose(quillDelta.Delta()..insert(character, style.attributes),
+        _controller.document.compose(
+            quillDelta.Delta()..insert(character, style.attributes),
             quill.ChangeSource.remote);
         print('after insert');
       }
     }
-
-    // Update the document of the existing controller
-    _controller.document = doc;
-    _controller.updateSelection(
-        TextSelection.collapsed(offset: 0), quill.ChangeSource.remote);
   }
 
   void updateQuill(String char, int index, bool isBold, bool isItalic) {
@@ -370,8 +364,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void initState() {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
-      print(isFromCrdtToQuill);
-      if (isFromCrdtToQuill) {
+      print(change.source);
+      if (change.source == quill.ChangeSource.remote) {
+        print('msh hab3at');
         return;
       }
       print('hohohoho');
@@ -421,9 +416,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   // }
 
   void handleLocalInsert(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -619,9 +614,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalDelete(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("DELETE");
     final operations = change.change.toList();
     print(operations);
@@ -804,17 +799,16 @@ class _TextEditorPageState extends State<TextEditorPage> {
       ));
     }
     // Update the Quill editor with the received content
-    crdt!.struct = crdts;
+    crdt!.struct = crdts.reversed.toList();
     isLocalChange = false;
     if (mounted) {
       setState(() {
         crdtToQuill(crdts);
       });
     }
-    Future.microtask(() {
-      isLocalChange = true;
-      isFromCrdtToQuill = false;
-    });
+    // Future.microtask(() {
+    //   isLocalChange = true;
+    // });
   }
 
   @override
