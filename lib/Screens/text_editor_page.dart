@@ -900,6 +900,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
         //   _controller.document =
         //       quill.Document.fromJson(jsonDecode(document['content']));
         // }
+        if (document['content'] != null && document['content'].isNotEmpty) {
+          _controller.document = quill.Document.fromJson([
+            {"insert": ""}
+          ]);
+        }
         role = document['role'];
         print('Role: $role');
         isReadOnly = role == 'viewer' ? true : false;
