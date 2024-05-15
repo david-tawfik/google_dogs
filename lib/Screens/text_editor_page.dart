@@ -11,7 +11,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
 import 'package:google_dogs/utilities/user_id.dart';
 
-
 const String webSocketURL = 'http://localhost:3000';
 // const String webSocketURL = 'http://20.90.88.241';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
@@ -22,7 +21,6 @@ class User {
 
   User({required this.email, required this.permission});
 }
-
 
 class CRDTNode {
   double siteID;
@@ -292,6 +290,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
   List<User> users = [];
   bool isReadOnly = true;
   bool isLocalChange = true;
+  bool isFromCrdtToQuill = false;
   StreamSubscription<quill.DocChange>? _changeSubscription;
 
   CRDT? crdt;
@@ -309,6 +308,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
     print('started function');
     final length = crdts.length;
     print(crdts);
+
+    // Create a new Quill document
+    var doc = quill.Document();
+
     for (var i = 0; i < length; i++) {
       final crdt = crdts[i];
       var style = quill.Style();
@@ -320,18 +323,24 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
       print(i);
       print('inserting');
-      print("Size: ${_controller.document.length}");
+      print("Size: ${doc.length}");
+
       // Ensure that crdt.character is a String
       String character = crdt.character.toString();
+
       // Check if character is not empty
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
-        _controller.document.compose(
-            quillDelta.Delta()..insert(character, style.attributes),
+        doc.compose(quillDelta.Delta()..insert(character, style.attributes),
             quill.ChangeSource.remote);
+        print('after insert');
       }
-      print('after insert');
     }
+
+    // Update the document of the existing controller
+    _controller.document = doc;
+    _controller.updateSelection(
+        TextSelection.collapsed(offset: 0), quill.ChangeSource.remote);
   }
 
   void updateQuill(String char, int index, bool isBold, bool isItalic) {
@@ -361,6 +370,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void initState() {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
+      print(isFromCrdtToQuill);
+      if (isFromCrdtToQuill) {
+        return;
+      }
       print('hohohoho');
       print(change.change.toList());
       final operations = change.change.toList();
@@ -386,7 +399,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
     });
     super.initState();
-
   }
 
   //   void loadDocument() async {
@@ -438,6 +450,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       CRDTNode justInserted =
           crdt!.localInsert(character, position, isBold, isItalic);
       //crdtToQuill(crdt!.struct);
+      print('ana ha insert');
       socket.emit("insert", [
         documentId,
         justInserted.character,
@@ -776,8 +789,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.on('document', loadContent);
     socket.on('update', handleRemoteUpdate);
   }
-  void loadContent(data)
-  {
+
+  void loadContent(data) {
     print('Load content event received: $data');
     // Parse the received data
     List<CRDTNode> crdts = [];
@@ -797,13 +810,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
       setState(() {
         crdtToQuill(crdts);
       });
-      
     }
     Future.microtask(() {
       isLocalChange = true;
+      isFromCrdtToQuill = false;
     });
-
   }
+
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -817,7 +830,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
     crdt = CRDT(documentId);
     connect();
-
   }
 
   Future<void> getUsersFromDocumentID() async {
@@ -896,7 +908,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
-                // if (document['content'] != null && document['content'].isNotEmpty) {
+        // if (document['content'] != null && document['content'].isNotEmpty) {
         //   _controller.document =
         //       quill.Document.fromJson(jsonDecode(document['content']));
         // }
@@ -922,7 +934,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     }
   }
 
-  final quill.QuillController _controller = quill.QuillController.basic();
+  quill.QuillController _controller = quill.QuillController.basic();
 
   @override
   Widget build(BuildContext context) {
