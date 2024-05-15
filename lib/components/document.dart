@@ -6,13 +6,11 @@ import 'package:google_dogs/utilities/show_snack_bar.dart';
 class DocumentStruct{
   String docId;
   String docName;
-  String docContent;
   String userPermission;
 
   DocumentStruct({
     required this.docId,
     required this.docName,
-    required this.docContent,
     required this.userPermission,
   });
 }

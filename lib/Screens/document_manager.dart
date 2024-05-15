@@ -32,7 +32,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         docs.add(DocumentStruct(
           docId: document['id'].toString(),
           docName: document['title'],
-          docContent: document['content'],
           userPermission: document['role'],
         ));
       }

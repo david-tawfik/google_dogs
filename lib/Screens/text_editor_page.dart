@@ -10,12 +10,10 @@ import 'package:google_dogs/utilities/show_snack_bar.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
 import 'package:google_dogs/utilities/user_id.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
 
 
 const String webSocketURL = 'http://localhost:3000';
+// const String webSocketURL = 'http://20.90.88.241';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
 class User {
@@ -224,6 +222,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
 
   late IO.Socket socket;
 
+  @override
+  void dispose() {
+    _changeSubscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   void crdtToQuill(List<CRDTNode> crdts) {
     print('started function');
     final length = crdts.length;
@@ -247,7 +252,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
         // Use the compose method to insert the character with styling
         _controller.document.compose(
             quillDelta.Delta()..insert(character, style.attributes),
-            quill.ChangeSource.local);
+            quill.ChangeSource.remote);
       }
       print('after insert');
     }
@@ -477,6 +482,34 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.on('insert', handleRemoteInsert);
     // Handle 'delete' events
     socket.on('delete', handleRemoteDelete);
+    socket.on('document', loadContent);
+  }
+  void loadContent(data)
+  {
+    print('Load content event received: $data');
+    // Parse the received data
+    List<CRDTNode> crdts = [];
+    for (var i = 0; i < data.length; i++) {
+      crdts.add(CRDTNode(
+        double.parse(data[i]["uniqueId"].toString()),
+        double.parse(data[i]["fractionalId"].toString()),
+        data[i]["char"],
+        data[i]["isBold"],
+        data[i]["isItalic"],
+      ));
+    }
+    // Update the Quill editor with the received content
+    crdt!.struct = crdts;
+    isLocalChange = false;
+    if (mounted) {
+      setState(() {
+        crdtToQuill(crdts);
+      });
+      
+    }
+    Future.microtask(() {
+      isLocalChange = true;
+    });
   }
   @override
   void didChangeDependencies() {
@@ -491,6 +524,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
     crdt = CRDT(documentId);
     connect();
+
   }
 
   Future<void> getUsersFromDocumentID() async {
