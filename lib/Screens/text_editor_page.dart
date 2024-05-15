@@ -308,10 +308,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
     print('started function');
     final length = crdts.length;
     print(crdts);
-  
+
     // Create a new Quill document
     var doc = quill.Document();
-  
+
     for (var i = 0; i < length; i++) {
       final crdt = crdts[i];
       var style = quill.Style();
@@ -324,25 +324,23 @@ class _TextEditorPageState extends State<TextEditorPage> {
       print(i);
       print('inserting');
       print("Size: ${doc.length}");
-  
+
       // Ensure that crdt.character is a String
       String character = crdt.character.toString();
-  
+
       // Check if character is not empty
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
-        doc.compose(
-            quillDelta.Delta()..insert(character, style.attributes),
+        doc.compose(quillDelta.Delta()..insert(character, style.attributes),
             quill.ChangeSource.remote);
         print('after insert');
       }
     }
-  
-    // Assign the new document to the controller
-    _controller = quill.QuillController(
-      document: doc,
-      selection: TextSelection.collapsed(offset: 0),
-    );
+
+    // Update the document of the existing controller
+    _controller.document = doc;
+    _controller.updateSelection(
+        TextSelection.collapsed(offset: 0), quill.ChangeSource.remote);
   }
 
   void updateQuill(String char, int index, bool isBold, bool isItalic) {
