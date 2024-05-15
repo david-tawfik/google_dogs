@@ -71,7 +71,7 @@ class CRDT {
     // for (var i = 0; i < struct.length; i++) {
     //   print(struct[i].fractionalID);
     // }
-      for (var i = 0; i < struct.length; i++) {
+    for (var i = 0; i < struct.length; i++) {
       print(struct[i].character);
     }
     print('local');
@@ -233,9 +233,15 @@ class CRDT {
 
   int comparePositions(CRDTNode a, CRDTNode b) {
     // Compare fractional IDs of CRDTNodes
-    // Example:
     if (a.fractionalID == b.fractionalID) {
-      return 0;
+      // Use uniqueId as a tie breaker
+      if (a.uniqueId == b.uniqueId) {
+        return 0;
+      } else if (a.uniqueId < b.uniqueId) {
+        return -1;
+      } else {
+        return 1;
+      }
     } else if (a.fractionalID < b.fractionalID) {
       return -1;
     } else {
@@ -302,7 +308,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
   StreamSubscription<quill.DocChange>? _changeSubscription;
   bool isFirstTime = true;
 
-
   CRDT? crdt;
 
   late IO.Socket socket;
@@ -311,6 +316,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void dispose() {
     _changeSubscription?.cancel();
     _controller.dispose();
+    socket.disconnect();
     super.dispose();
   }
 
@@ -501,7 +507,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       print("Bold change at position: $position, length: $length");
       List<CRDTNode> updatedNodes = crdt!.localBold(position, length);
       print("el hayb2o bold: ${updatedNodes[0].character}");
-      print(updatedNodes[1].character);
+      print(updatedNodes[0].character);
       socket.emit("update", [documentId, "bold", updatedNodes]);
     }
   }
@@ -696,24 +702,34 @@ class _TextEditorPageState extends State<TextEditorPage> {
       case 'bold':
         print("gowa: $updatedIndices");
         updatedIndices.forEach((index) {
-          _controller.document.format(_controller.document.length - index, 1, quill.Attribute.bold);
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'bold': true});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'unbold':
         updatedIndices.forEach((index) {
-          _controller.document.format(
-              index, 1, quill.Attribute.clone(quill.Attribute.bold, null));
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'bold': null});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'italic':
         updatedIndices.forEach((index) {
-          _controller.document.format(index, 1, quill.Attribute.italic);
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'italic': true});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'unitalic':
         updatedIndices.forEach((index) {
-          _controller.document.format(
-              index, 1, quill.Attribute.clone(quill.Attribute.italic, null));
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'italic': null});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       default:
@@ -747,7 +763,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'unbold':
           updatedIndices = crdt!.remoteUnbold(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -760,7 +775,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'italic':
           updatedIndices = crdt!.remoteItalic(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -773,7 +787,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'unitalic':
           updatedIndices = crdt!.remoteUnitalic(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -808,7 +821,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void loadContent(data) {
-    if(!isFirstTime){
+    if (!isFirstTime) {
       return;
     }
     isFirstTime = false;
@@ -825,7 +838,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       ));
     }
     // Update the Quill editor with the received content
-    crdt!.struct = crdts.reversed.toList(); //TA3ALA HENA TANYY
+    crdt!.struct = crdts; //TA3ALA HENA TANYY
     isLocalChange = false;
     if (mounted) {
       setState(() {
