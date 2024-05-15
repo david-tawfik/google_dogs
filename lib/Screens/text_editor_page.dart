@@ -68,14 +68,18 @@ class CRDT {
 
   CRDTNode localInsert(String value, int index, bool isBold, bool isItalic) {
     print("BEFORE");
-    for (var i = 0; i < struct.length; i++) {
-      print(struct[i].fractionalID);
+    // for (var i = 0; i < struct.length; i++) {
+    //   print(struct[i].fractionalID);
+    // }
+      for (var i = 0; i < struct.length; i++) {
+      print(struct[i].character);
     }
-
     print('local');
     final char = generateChar(value, index, isBold, isItalic);
-    print("passed");
+    // struct = struct.reversed.toList();
+    print("han insert harf: ${char.character} at ${index + 1}");
     struct.insert(index + 1, char);
+    // struct = struct.reversed.toList();
     print("AFTER");
     for (var i = 0; i < struct.length; i++) {
       print(struct[i].fractionalID);
@@ -86,43 +90,48 @@ class CRDT {
   List<CRDTNode> localBold(int start, int length) {
     List<CRDTNode> updatedNodes = [];
 
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isBold = true;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localUnbold(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isBold = false;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localItalic(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isItalic = true;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localUnitalic(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isItalic = false;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
@@ -291,6 +300,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
   bool isReadOnly = true;
   bool isLocalChange = true;
   StreamSubscription<quill.DocChange>? _changeSubscription;
+  bool isFirstTime = true;
+
 
   CRDT? crdt;
 
@@ -489,8 +500,8 @@ class _TextEditorPageState extends State<TextEditorPage> {
     if (isBold) {
       print("Bold change at position: $position, length: $length");
       List<CRDTNode> updatedNodes = crdt!.localBold(position, length);
-      print(updatedNodes[0].character);
-      print('etba3 henaa');
+      print("el hayb2o bold: ${updatedNodes[0].character}");
+      print(updatedNodes[1].character);
       socket.emit("update", [documentId, "bold", updatedNodes]);
     }
   }
@@ -683,8 +694,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void updateQuillDocument(String operation, List<int> updatedIndices) {
     switch (operation) {
       case 'bold':
+        print("gowa: $updatedIndices");
         updatedIndices.forEach((index) {
-          _controller.document.format(index, 1, quill.Attribute.bold);
+          _controller.document.format(_controller.document.length - index, 1, quill.Attribute.bold);
         });
         break;
       case 'unbold':
@@ -720,6 +732,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
       switch (updateType) {
         case 'bold':
           updatedIndices = crdt!.remoteBold(uniqueId);
+          print("1: $updatedIndices");
+          updatedIndices = updatedIndices.reversed.toList();
+          print("2: $updatedIndices");
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -793,6 +808,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void loadContent(data) {
+    if(!isFirstTime){
+      return;
+    }
+    isFirstTime = false;
     print('Load content event received: $data');
     // Parse the received data
     List<CRDTNode> crdts = [];
@@ -810,7 +829,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     isLocalChange = false;
     if (mounted) {
       setState(() {
-        crdtToQuill(crdts);
+        crdtToQuill(crdts.reversed.toList());
       });
     }
 
