@@ -3,16 +3,14 @@ import 'package:google_dogs/Screens/text_editor_page.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
 
-class DocumentStruct{
+class DocumentStruct {
   String docId;
   String docName;
-  String docContent;
   String userPermission;
 
   DocumentStruct({
     required this.docId,
     required this.docName,
-    required this.docContent,
     required this.userPermission,
   });
 }
@@ -84,8 +82,8 @@ class _DocumentState extends State<Document> {
                         final RelativeRect position = RelativeRect.fromRect(
                           Rect.fromPoints(
                             button.localToGlobal(
-                                const Offset(
-                                    kDocumentWidth * 0.6, kDocumentHeight * 0.5),
+                                const Offset(kDocumentWidth * 0.6,
+                                    kDocumentHeight * 0.5),
                                 ancestor: overlay),
                             button.localToGlobal(
                                 button.size.bottomRight(const Offset(0, 0)),
@@ -95,51 +93,50 @@ class _DocumentState extends State<Document> {
                         );
                         if (widget.document.userPermission == 'viewer') {
                           setState(() {
-                            
-                          showSnackBar('Viewers are not allowed to rename or delete', context);
+                            showSnackBar(
+                                'Viewers are not allowed to rename or delete',
+                                context);
                           });
-                       
-                        }
-                        else{
-
-                        showMenu(
-                            context: context,
-                            position: position,
-                            items: <PopupMenuEntry>[
-                              PopupMenuItem(
-                                onTap: () {
-                                  widget.showRenameDialog(context, widget.document.docName, widget.index);
-                                },
-                                height: 40,
-                                child: const Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.edit, size: 14),
-                                    ),
-                                    Text('Rename'),
-                                    Spacer(),
-                                  ],
+                        } else {
+                          showMenu(
+                              context: context,
+                              position: position,
+                              items: <PopupMenuEntry>[
+                                PopupMenuItem(
+                                  onTap: () {
+                                    widget.showRenameDialog(context,
+                                        widget.document.docName, widget.index);
+                                  },
+                                  height: 40,
+                                  child: const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.edit, size: 14),
+                                      ),
+                                      Text('Rename'),
+                                      Spacer(),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PopupMenuItem(
-                                onTap: () {
-                                  widget.showDeleteDialog(widget.index);
-                                },
-                                height: 40,
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.delete, size: 14),
-                                    ),
-                                    Text('Remove'),
-                                  ],
+                                PopupMenuItem(
+                                  onTap: () {
+                                    widget.showDeleteDialog(widget.index);
+                                  },
+                                  height: 40,
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.delete, size: 14),
+                                      ),
+                                      Text('Remove'),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ]);
+                              ]);
                         }
                       },
                       child: const Icon(

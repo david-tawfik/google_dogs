@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-//const String baseURL = "http://localhost:5555/api";
- const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
+const String baseURL = "http://localhost:5555/api";
+//const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
 
 class ApiService {
   String token = '';
