@@ -32,16 +32,13 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         docs.add(DocumentStruct(
           docId: document['id'].toString(),
           docName: document['title'],
-          docContent: document['content'],
           userPermission: document['role'],
         ));
       }
-      if (mounted)
-      {
-
-      setState(() {
-        documents = docs;
-      });
+      if (mounted) {
+        setState(() {
+          documents = docs;
+        });
       }
     } else {
       if (mounted) {
@@ -270,7 +267,7 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                   return Document(
                     document: documents[index - 1],
                     index: index - 1,
-                    showRenameDialog:  _showRenameDialog,
+                    showRenameDialog: _showRenameDialog,
                     showDeleteDialog: _showDeleteDialog,
                   );
                 },

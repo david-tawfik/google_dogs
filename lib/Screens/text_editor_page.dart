@@ -10,10 +10,9 @@ import 'package:google_dogs/utilities/show_snack_bar.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
 import 'package:google_dogs/utilities/user_id.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:io';
 
 const String webSocketURL = 'http://localhost:3000';
+// const String webSocketURL = 'http://20.90.88.241';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
 class User {
@@ -24,11 +23,11 @@ class User {
 }
 
 class CRDTNode {
-  final double siteID;
-  final double fractionalID;
-  final String character;
-  final bool isBold;
-  final bool isItalic;
+  double siteID;
+  double fractionalID;
+  String character;
+  bool isBold;
+  bool isItalic;
 
   CRDTNode(this.siteID, this.fractionalID, this.character, this.isBold,
       this.isItalic);
@@ -67,14 +66,14 @@ class CRDT {
           ),
         ];
 
-  CRDTNode localInsert(String value, int index) {
+  CRDTNode localInsert(String value, int index, bool isBold, bool isItalic) {
     print("BEFORE");
     for (var i = 0; i < struct.length; i++) {
       print(struct[i].fractionalID);
     }
 
     print('local');
-    final char = generateChar(value, index);
+    final char = generateChar(value, index, isBold, isItalic);
     print("passed");
     struct.insert(index + 1, char);
     print("AFTER");
@@ -84,7 +83,91 @@ class CRDT {
     return char;
   }
 
-  CRDTNode generateChar(String value, int index) {
+  List<CRDTNode> localBold(int start, int length) {
+    List<CRDTNode> updatedNodes = [];
+
+    for (var i = start + 1; i < start + 1 + length; i++) {
+      struct[i].isBold = true;
+      updatedNodes.add(struct[i]);
+    }
+
+    return updatedNodes;
+  }
+
+  List<CRDTNode> localUnbold(int start, int length) {
+    List<CRDTNode> updatedNodes = [];
+
+    for (var i = start + 1; i < start + 1 + length; i++) {
+      struct[i].isBold = false;
+      updatedNodes.add(struct[i]);
+    }
+
+    return updatedNodes;
+  }
+
+  List<CRDTNode> localItalic(int start, int length) {
+    List<CRDTNode> updatedNodes = [];
+
+    for (var i = start + 1; i < start + 1 + length; i++) {
+      struct[i].isItalic = true;
+      updatedNodes.add(struct[i]);
+    }
+
+    return updatedNodes;
+  }
+
+  List<CRDTNode> localUnitalic(int start, int length) {
+    List<CRDTNode> updatedNodes = [];
+
+    for (var i = start + 1; i < start + 1 + length; i++) {
+      struct[i].isItalic = false;
+      updatedNodes.add(struct[i]);
+    }
+
+    return updatedNodes;
+  }
+
+  List<int> remoteBold(int uniqueId) {
+    List<int> updatedIndices = [];
+    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    if (index != -1) {
+      struct[index - 1].isBold = true;
+      updatedIndices.add(index - 1);
+    }
+    return updatedIndices;
+  }
+
+  List<int> remoteUnbold(int uniqueId) {
+    List<int> updatedIndices = [];
+    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    if (index != -1) {
+      struct[index - 1].isBold = false;
+      updatedIndices.add(index - 1);
+    }
+    return updatedIndices;
+  }
+
+  List<int> remoteItalic(int uniqueId) {
+    List<int> updatedIndices = [];
+    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    if (index != -1) {
+      struct[index - 1].isItalic = true;
+      updatedIndices.add(index - 1);
+    }
+    return updatedIndices;
+  }
+
+  List<int> remoteUnitalic(int uniqueId) {
+    List<int> updatedIndices = [];
+    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    if (index != -1) {
+      struct[index - 1].isItalic = false;
+      updatedIndices.add(index - 1);
+    }
+    return updatedIndices;
+  }
+
+  CRDTNode generateChar(String value, int index, bool isBold, bool isItalic) {
     // Your logic for generating a CRDTNode with fractionalID goes here
     // Use the index and adjacent nodes' positions to calculate fractionalID
     print(index);
@@ -95,13 +178,7 @@ class CRDT {
     print(fractionalId);
     double globalId =
         DateTime.now().millisecondsSinceEpoch.toDouble(); // TODO: ADD USER ID
-    return CRDTNode(
-      globalId,
-      fractionalId,
-      value,
-      false,
-      false,
-    );
+    return CRDTNode(globalId, fractionalId, value, isBold, isItalic);
   }
 
   CRDTNode localDelete(int index) {
@@ -113,8 +190,6 @@ class CRDT {
     struct.insert(index, char);
     return {'char': char.character, 'index': index};
   }
-
-  void remoteBold(){}
 
   int remoteDelete(CRDTNode char) {
     final index = findIndexByPosition(char);
@@ -215,16 +290,28 @@ class _TextEditorPageState extends State<TextEditorPage> {
   List<User> users = [];
   bool isReadOnly = true;
   bool isLocalChange = true;
+  bool isFromCrdtToQuill = false;
   StreamSubscription<quill.DocChange>? _changeSubscription;
 
   CRDT? crdt;
 
   late IO.Socket socket;
 
+  @override
+  void dispose() {
+    _changeSubscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   void crdtToQuill(List<CRDTNode> crdts) {
     print('started function');
     final length = crdts.length;
     print(crdts);
+
+    // Create a new Quill document
+    var doc = quill.Document();
+
     for (var i = 0; i < length; i++) {
       final crdt = crdts[i];
       var style = quill.Style();
@@ -236,19 +323,24 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
       print(i);
       print('inserting');
-      print("Size: ${_controller.document.length}");
+      print("Size: ${doc.length}");
+
       // Ensure that crdt.character is a String
       String character = crdt.character.toString();
+
       // Check if character is not empty
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
-
-        _controller.document.compose(
-            quillDelta.Delta()..insert(character, style.attributes),
-            quill.ChangeSource.local);
+        doc.compose(quillDelta.Delta()..insert(character, style.attributes),
+            quill.ChangeSource.remote);
+        print('after insert');
       }
-      print('after insert');
     }
+
+    // Update the document of the existing controller
+    _controller.document = doc;
+    _controller.updateSelection(
+        TextSelection.collapsed(offset: 0), quill.ChangeSource.remote);
   }
 
   void updateQuill(String char, int index, bool isBold, bool isItalic) {
@@ -278,16 +370,55 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void initState() {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
+      print(isFromCrdtToQuill);
+      if (isFromCrdtToQuill) {
+        return;
+      }
       print('hohohoho');
       print(change.change.toList());
-      if (change.change.toList().last.isInsert) {
+      final operations = change.change.toList();
+      final lastOperation = operations.last;
+      if (lastOperation.isInsert) {
         handleLocalInsert(change);
-      } else if (change.change.toList().last.isDelete) {
+      } else if (lastOperation.isDelete) {
         handleLocalDelete(change);
+      } else if (lastOperation.isRetain && lastOperation.attributes != null) {
+        if (lastOperation.attributes!.containsKey('bold')) {
+          if (lastOperation.attributes!['bold'] != null) {
+            handleLocalBold(change);
+          } else {
+            handleLocalUnbold(change);
+          }
+        } else if (lastOperation.attributes!.containsKey('italic')) {
+          if (lastOperation.attributes!['italic'] != null) {
+            handleLocalItalic(change);
+          } else {
+            handleLocalUnitalic(change);
+          }
+        }
       }
     });
     super.initState();
   }
+
+  //   void loadDocument() async {
+  //   // Send a GET request to the server
+  //   http.Response response = await http.get('$webSocketURL/documents/$documentId' as Uri);
+
+  //   // Check the status code of the response
+  //   if (response.statusCode == 200) {
+  //     // Parse the response body into a map
+  //     Map<String, dynamic> document = jsonDecode(response.body);
+
+  //     // Get the content of the document
+  //     String content = document['content'];
+
+  //     // Set the content of the QuillEditor widget
+  //     _controller.document.insert(0, content);
+  //   } else {
+  //     print('Failed to load document');
+  //   }
+  // }
 
   void handleLocalInsert(quill.DocChange change) {
     if (!isLocalChange) {
@@ -299,50 +430,27 @@ class _TextEditorPageState extends State<TextEditorPage> {
 
     int position = 0;
     String? character;
+    bool isBold = false;
+    bool isItalic = false;
 
     for (var operation in operations) {
       if (operation.isRetain) {
         position = operation.length!;
       } else if (operation.isInsert) {
         character = operation.data.toString();
-      }
-    }
-
-    void handleLocalBold(quill.DocChange change) {
-      if (!isLocalChange) {
-        return;
-      }
-      print("CHANGE");
-      final operations = change.change.toList();
-      print(operations);
-
-      int position = 0;
-      int length = 0;
-      bool isBold = false;
-      bool isItalic = false;
-
-      for (var operation in operations) {
-        if (operation.isRetain) {
-          if (operation.attributes != null) {
-            isBold = operation.attributes!.containsKey('bold');
-            isItalic = operation.attributes!.containsKey('italic');
-            length = operation.length!;
-          } else {
-            position = operation.length!;
-          }
+        if (operation.attributes != null) {
+          isBold = operation.attributes!['bold'] != null;
+          isItalic = operation.attributes!['italic'] != null;
         }
-      }
-
-      if (isBold || isItalic) {
-        print("Bold or Italic change at position: $position, length: $length");
-        // Emit event or perform action here
       }
     }
 
     if (character != null) {
       print("here");
-      CRDTNode justInserted = crdt!.localInsert(character, position);
+      CRDTNode justInserted =
+          crdt!.localInsert(character, position, isBold, isItalic);
       //crdtToQuill(crdt!.struct);
+      print('ana ha insert');
       socket.emit("insert", [
         documentId,
         justInserted.character,
@@ -351,6 +459,134 @@ class _TextEditorPageState extends State<TextEditorPage> {
         justInserted.isBold,
         justInserted.isItalic
       ]);
+    }
+  }
+
+  void handleLocalBold(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("CHANGE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    int length = 0;
+    bool isBold = false;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        if (operation.attributes != null &&
+            operation.attributes!.containsKey('bold')) {
+          isBold = operation.attributes!['bold'] != null;
+          length = operation.length!;
+        } else {
+          position = operation.length!;
+        }
+      }
+    }
+
+    print(position);
+    print(length);
+
+    if (isBold) {
+      print("Bold change at position: $position, length: $length");
+      List<CRDTNode> updatedNodes = crdt!.localBold(position, length);
+      print(updatedNodes[0].character);
+      socket.emit("update", [documentId, "bold", updatedNodes]);
+    }
+  }
+
+  void handleLocalUnbold(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("CHANGE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    int length = 0;
+    bool isUnbold = false;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        if (operation.attributes != null &&
+            operation.attributes!.containsKey('bold')) {
+          isUnbold = operation.attributes!['bold'] == null;
+          length = operation.length!;
+        } else {
+          position = operation.length!;
+        }
+      }
+    }
+
+    if (isUnbold) {
+      print("Unbold change at position: $position, length: $length");
+      List<CRDTNode> updatedNodes = crdt!.localUnbold(position, length);
+      socket.emit("update", [documentId, "unbold", updatedNodes]);
+    }
+  }
+
+  void handleLocalItalic(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("CHANGE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    int length = 0;
+    bool isItalic = false;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        if (operation.attributes != null &&
+            operation.attributes!.containsKey('italic')) {
+          isItalic = operation.attributes!['italic'] != null;
+          length = operation.length!;
+        } else {
+          position = operation.length!;
+        }
+      }
+    }
+
+    if (isItalic) {
+      print("Italic change at position: $position, length: $length");
+      List<CRDTNode> updatedNodes = crdt!.localItalic(position, length);
+      socket.emit("update", [documentId, "italic", updatedNodes]);
+    }
+  }
+
+  void handleLocalUnitalic(quill.DocChange change) {
+    if (!isLocalChange) {
+      return;
+    }
+    print("CHANGE");
+    final operations = change.change.toList();
+    print(operations);
+
+    int position = 0;
+    int length = 0;
+    bool isUnitalic = false;
+
+    for (var operation in operations) {
+      if (operation.isRetain) {
+        if (operation.attributes != null &&
+            operation.attributes!.containsKey('italic')) {
+          isUnitalic = operation.attributes!['italic'] == null;
+          length = operation.length!;
+        } else {
+          position = operation.length!;
+        }
+      }
+    }
+
+    if (isUnitalic) {
+      print("Unitalic change at position: $position, length: $length");
+      List<CRDTNode> updatedNodes = crdt!.localUnitalic(position, length);
+      socket.emit("update", [documentId, "unitalic", updatedNodes]);
     }
   }
 
@@ -442,6 +678,101 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
   }
 
+  void updateQuillDocument(String operation, List<int> updatedIndices) {
+    switch (operation) {
+      case 'bold':
+        updatedIndices.forEach((index) {
+          _controller.document.format(index, 1, quill.Attribute.bold);
+        });
+        break;
+      case 'unbold':
+        updatedIndices.forEach((index) {
+          _controller.document.format(
+              index, 1, quill.Attribute.clone(quill.Attribute.bold, null));
+        });
+        break;
+      case 'italic':
+        updatedIndices.forEach((index) {
+          _controller.document.format(index, 1, quill.Attribute.italic);
+        });
+        break;
+      case 'unitalic':
+        updatedIndices.forEach((index) {
+          _controller.document.format(
+              index, 1, quill.Attribute.clone(quill.Attribute.italic, null));
+        });
+        break;
+      default:
+        print('Invalid operation: $operation');
+    }
+  }
+
+  void handleRemoteUpdate(data) {
+    print('Update event received: $data');
+    String updateType = data[0];
+    List<dynamic> updatedNodes = data[1];
+    List<int> updatedIndices = [];
+
+    updatedNodes.forEach((node) {
+      int uniqueId = node['siteID'];
+      switch (updateType) {
+        case 'bold':
+          updatedIndices = crdt!.remoteBold(uniqueId);
+          isLocalChange = false;
+          if (mounted) {
+            setState(() {
+              updateQuillDocument('bold', updatedIndices);
+            });
+          }
+          Future.microtask(() {
+            isLocalChange = true;
+          });
+          break;
+        case 'unbold':
+          updatedIndices = crdt!.remoteUnbold(uniqueId);
+          updatedIndices = crdt!.remoteBold(uniqueId);
+          isLocalChange = false;
+          if (mounted) {
+            setState(() {
+              updateQuillDocument('unbold', updatedIndices);
+            });
+          }
+          Future.microtask(() {
+            isLocalChange = true;
+          });
+          break;
+        case 'italic':
+          updatedIndices = crdt!.remoteItalic(uniqueId);
+          updatedIndices = crdt!.remoteBold(uniqueId);
+          isLocalChange = false;
+          if (mounted) {
+            setState(() {
+              updateQuillDocument('italic', updatedIndices);
+            });
+          }
+          Future.microtask(() {
+            isLocalChange = true;
+          });
+          break;
+        case 'unitalic':
+          updatedIndices = crdt!.remoteUnitalic(uniqueId);
+          updatedIndices = crdt!.remoteBold(uniqueId);
+          isLocalChange = false;
+          if (mounted) {
+            setState(() {
+              updateQuillDocument('unitalic', updatedIndices);
+            });
+          }
+          Future.microtask(() {
+            isLocalChange = true;
+          });
+          break;
+        default:
+          print('Invalid update type: $updateType');
+      }
+    });
+  }
+
   void connect() {
     socket = IO.io(webSocketURL, <String, dynamic>{
       'transports': ['websocket'],
@@ -455,6 +786,35 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.on('insert', handleRemoteInsert);
     // Handle 'delete' events
     socket.on('delete', handleRemoteDelete);
+    socket.on('document', loadContent);
+    socket.on('update', handleRemoteUpdate);
+  }
+
+  void loadContent(data) {
+    print('Load content event received: $data');
+    // Parse the received data
+    List<CRDTNode> crdts = [];
+    for (var i = 0; i < data.length; i++) {
+      crdts.add(CRDTNode(
+        double.parse(data[i]["uniqueId"].toString()),
+        double.parse(data[i]["fractionalId"].toString()),
+        data[i]["char"],
+        data[i]["isBold"],
+        data[i]["isItalic"],
+      ));
+    }
+    // Update the Quill editor with the received content
+    crdt!.struct = crdts;
+    isLocalChange = false;
+    if (mounted) {
+      setState(() {
+        crdtToQuill(crdts);
+      });
+    }
+    Future.microtask(() {
+      isLocalChange = true;
+      isFromCrdtToQuill = false;
+    });
   }
 
   @override
@@ -528,18 +888,18 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
   }
 
-  Future<void> updateDocumentContent() async {
-    var response = await apiService.updateDocumentContent({
-      'docId': documentId,
-      'content': jsonEncode(_controller.document.toDelta().toJson()),
-    });
-    print(response);
-    if (response.statusCode == 200) {
-      showSnackBar('Document updated', context);
-    } else {
-      showSnackBar('Failed to update document', context);
-    }
-  }
+  // Future<void> updateDocumentContent() async {
+  //   var response = await apiService.updateDocumentContent({
+  //     'docId': documentId,
+  //     'content': jsonEncode(_controller.document.toDelta().toJson()),
+  //   });
+  //   print(response);
+  //   if (response.statusCode == 200) {
+  //     showSnackBar('Document updated', context);
+  //   } else {
+  //     showSnackBar('Failed to update document', context);
+  //   }
+  // }
 
   Future<void> getDocument() async {
     var response = await apiService.getDocumentById(
@@ -548,9 +908,14 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
+        // if (document['content'] != null && document['content'].isNotEmpty) {
+        //   _controller.document =
+        //       quill.Document.fromJson(jsonDecode(document['content']));
+        // }
         if (document['content'] != null && document['content'].isNotEmpty) {
-          _controller.document =
-              quill.Document.fromJson(jsonDecode(document['content']));
+          _controller.document = quill.Document.fromJson([
+            {"insert": ""}
+          ]);
         }
         role = document['role'];
         print('Role: $role');
@@ -569,7 +934,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     }
   }
 
-  final quill.QuillController _controller = quill.QuillController.basic();
+  quill.QuillController _controller = quill.QuillController.basic();
 
   @override
   Widget build(BuildContext context) {
@@ -899,7 +1264,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                   // String text = _controller.document.toPlainText();
                   // Handle the text
                   // print(text);
-                  updateDocumentContent();
+                  // updateDocumentContent();
                 },
                 tooltip: 'Save',
                 child: Icon(Icons.save),

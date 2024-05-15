@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-//const String baseURL = "http://localhost:5555/api";
- const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
+// const String baseURL = "http://localhost:5555/api";
+const String baseURL =
+    "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
 
 class ApiService {
   String token = '';
@@ -67,41 +68,6 @@ class ApiService {
     }
   }
 
-  Future<dynamic> createCommunity(Map<String, dynamic> data) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseURL/subreddit/createCommunity'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(data),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to create community');
-      }
-    } catch (e) {
-      print('Exception occurred: $e');
-    }
-  }
-
-  Future<dynamic> checkSubredditAvailability(String communityName) async {
-    var result = await request(
-        '/subreddit/subredditNameAvailability?name=$communityName',
-        headers: header,
-        method: 'GET');
-    return result;
-  }
-
-  Future<dynamic> getUserAccountSettings() async {
-    var result =
-        await request('/user/accountSettings', headers: header, method: 'GET');
-    return result;
-  }
-
   Future<Response> register(Map<String, dynamic> body) async {
     var result = await request('/users/register',
         headers: header, method: 'POST', body: body);
@@ -114,10 +80,12 @@ class ApiService {
     return result;
   }
 
-    Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
-      print(body);
-    var result = await request('/relations/getAllUserDocuments?userId=${body['userId']}',
-        headers: header, method: 'GET');
+  Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
+    print(body);
+    var result = await request(
+        '/relations/getAllUserDocuments?userId=${body['userId']}',
+        headers: header,
+        method: 'GET');
     print(result);
     return result;
   }
@@ -152,20 +120,20 @@ class ApiService {
         headers: header, method: 'PATCH', body: body);
     return result;
   }
-  
-  Future<Response> updateDocumentContent(Map<String, dynamic> body) async {
-    print(body);
-    var result = await request('/documents/updateDocumentContent',
-        headers: header, method: 'PATCH', body: body);
-    return result;
-  }
 
-    Future<Response> renameDocument(Map<String, dynamic> body) async {
-      // print('aaaaaaaa: $body');
+  // Future<Response> updateDocumentContent(Map<String, dynamic> body) async {
+  //   print(body);
+  //   var result = await request('/documents/updateDocumentContent',
+  //       headers: header, method: 'PATCH', body: body);
+  //   return result;
+  // }
+
+  Future<Response> renameDocument(Map<String, dynamic> body) async {
+    // print('aaaaaaaa: $body');
     var result = await request('/documents/renameDocument',
         headers: header, method: 'PATCH', body: body);
-        // print(result.body);
-        // print(result.statusCode);
+    // print(result.body);
+    // print(result.statusCode);
     return result;
   }
 
@@ -175,4 +143,3 @@ class ApiService {
     return result;
   }
 }
-
