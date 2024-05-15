@@ -10,10 +10,10 @@ import 'package:google_dogs/utilities/show_snack_bar.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
 import 'package:google_dogs/utilities/user_id.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:io';
+
 
 const String webSocketURL = 'http://localhost:3000';
+// const String webSocketURL = 'http://20.90.88.241';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
 
 class User {
@@ -22,6 +22,7 @@ class User {
 
   User({required this.email, required this.permission});
 }
+
 
 class CRDTNode {
   double siteID;
@@ -297,6 +298,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
 
   late IO.Socket socket;
 
+  @override
+  void dispose() {
+    _changeSubscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   void crdtToQuill(List<CRDTNode> crdts) {
     print('started function');
     final length = crdts.length;
@@ -318,10 +326,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
       // Check if character is not empty
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
-
         _controller.document.compose(
             quillDelta.Delta()..insert(character, style.attributes),
-            quill.ChangeSource.local);
+            quill.ChangeSource.remote);
       }
       print('after insert');
     }
@@ -379,7 +386,27 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
     });
     super.initState();
+
   }
+
+  //   void loadDocument() async {
+  //   // Send a GET request to the server
+  //   http.Response response = await http.get('$webSocketURL/documents/$documentId' as Uri);
+
+  //   // Check the status code of the response
+  //   if (response.statusCode == 200) {
+  //     // Parse the response body into a map
+  //     Map<String, dynamic> document = jsonDecode(response.body);
+
+  //     // Get the content of the document
+  //     String content = document['content'];
+
+  //     // Set the content of the QuillEditor widget
+  //     _controller.document.insert(0, content);
+  //   } else {
+  //     print('Failed to load document');
+  //   }
+  // }
 
   void handleLocalInsert(quill.DocChange change) {
     if (!isLocalChange) {
@@ -746,10 +773,37 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.on('insert', handleRemoteInsert);
     // Handle 'delete' events
     socket.on('delete', handleRemoteDelete);
-
+    socket.on('document', loadContent);
     socket.on('update', handleRemoteUpdate);
   }
+  void loadContent(data)
+  {
+    print('Load content event received: $data');
+    // Parse the received data
+    List<CRDTNode> crdts = [];
+    for (var i = 0; i < data.length; i++) {
+      crdts.add(CRDTNode(
+        double.parse(data[i]["uniqueId"].toString()),
+        double.parse(data[i]["fractionalId"].toString()),
+        data[i]["char"],
+        data[i]["isBold"],
+        data[i]["isItalic"],
+      ));
+    }
+    // Update the Quill editor with the received content
+    crdt!.struct = crdts;
+    isLocalChange = false;
+    if (mounted) {
+      setState(() {
+        crdtToQuill(crdts);
+      });
+      
+    }
+    Future.microtask(() {
+      isLocalChange = true;
+    });
 
+  }
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -763,6 +817,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
     crdt = CRDT(documentId);
     connect();
+
   }
 
   Future<void> getUsersFromDocumentID() async {
@@ -821,18 +876,18 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
   }
 
-  Future<void> updateDocumentContent() async {
-    var response = await apiService.updateDocumentContent({
-      'docId': documentId,
-      'content': jsonEncode(_controller.document.toDelta().toJson()),
-    });
-    print(response);
-    if (response.statusCode == 200) {
-      showSnackBar('Document updated', context);
-    } else {
-      showSnackBar('Failed to update document', context);
-    }
-  }
+  // Future<void> updateDocumentContent() async {
+  //   var response = await apiService.updateDocumentContent({
+  //     'docId': documentId,
+  //     'content': jsonEncode(_controller.document.toDelta().toJson()),
+  //   });
+  //   print(response);
+  //   if (response.statusCode == 200) {
+  //     showSnackBar('Document updated', context);
+  //   } else {
+  //     showSnackBar('Failed to update document', context);
+  //   }
+  // }
 
   Future<void> getDocument() async {
     var response = await apiService.getDocumentById(
@@ -841,6 +896,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
+                // if (document['content'] != null && document['content'].isNotEmpty) {
+        //   _controller.document =
+        //       quill.Document.fromJson(jsonDecode(document['content']));
+        // }
         if (document['content'] != null && document['content'].isNotEmpty) {
           _controller.document = quill.Document.fromJson([
             {"insert": ""}
@@ -1204,7 +1263,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
                   // String text = _controller.document.toPlainText();
                   // Handle the text
                   // print(text);
-                  updateDocumentContent();
+                  // updateDocumentContent();
                 },
                 tooltip: 'Save',
                 child: Icon(Icons.save),
