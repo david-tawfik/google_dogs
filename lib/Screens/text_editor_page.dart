@@ -208,7 +208,7 @@ class CRDT {
   }
 
   int remoteDelete(CRDTNode char) {
-    final index = findIndexByPosition(char);
+    final index = struct.indexWhere((node) => node.uniqueId == char.uniqueId);
     if (index != -1) {
       struct.removeAt(index);
     }
