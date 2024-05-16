@@ -8,6 +8,8 @@ import 'package:google_dogs/components/document.dart';
 import 'package:google_dogs/utilities/show_snack_bar.dart';
 import 'package:google_dogs/utilities/user_id.dart';
 import 'dart:convert';
+import 'package:google_dogs/components/reddit_loading_indicator.dart';
+import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
 class DocumentManagerScreen extends StatefulWidget {
   static const String id = '/document_manager';
@@ -21,8 +23,13 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   String userInitial = 'u';
   String userId = '';
   List<DocumentStruct> documents = [];
+  bool isLoading = false;
 
   Future<void> getAllUserDocuments() async {
+    setState(() {
+      isLoading = true;
+    
+    });
     ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
     List<DocumentStruct> docs = [];
@@ -45,9 +52,16 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         showSnackBar('Failed to get documents', context);
       }
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> renameDocument(String docId, String newName) async {
+    setState(() {
+      isLoading = true;
+    
+    });
     ApiService apiService = ApiService();
     print('BWAHAHAHAHHHAHAHAHAHAHHAHAHAHHAHAHA');
     var response =
@@ -60,9 +74,17 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         showSnackBar('Failed to rename!', context);
       }
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> deleteDocument(String docId) async {
+    setState(() {
+      isLoading = true;
+    
+    
+    });
     ApiService apiService = ApiService();
     var response = await apiService.deleteDocument({'docId': docId});
     if (response.statusCode == 200) {
@@ -78,6 +100,9 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         });
       }
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -88,15 +113,18 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     // if (args['initialLetter'] != null) {
     //   userInitial = args['initialLetter'];
     // }
+    super.didChangeDependencies();
     if (mounted) {
       setState(() {
         getAllUserDocuments();
       });
     }
-    super.didChangeDependencies();
   }
 
   Future<void> createDocument() async {
+    setState(() {
+      isLoading = true;
+    });
     print('createDocument $userId');
     var response = await apiService.createDocument({'userId': userId});
     print(response);
@@ -104,11 +132,16 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       var recievedDocument = jsonDecode(response.body);
       setState(() {
         Navigator.pushNamed(context, TextEditorPage.id,
-            arguments: {"documentId": recievedDocument['id']});
+            arguments: {"documentId": recievedDocument['id']}).then((value) {
+          getAllUserDocuments();
+            },);
       });
     } else {
       showSnackBar('Failed to create document', context);
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   void _showRenameDialog(BuildContext context, String docName, int index) {
@@ -196,83 +229,90 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   Widget build(BuildContext context) {
     return Theme(
       data: ThemeData.dark(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.menu),
-              ),
-              const Image(
-                image: AssetImage('assets/images/logo_white.png'),
-                height: 50,
-              ),
-              const Text('Dogs'),
-              const Spacer(),
-              const Icon(Icons.apps_rounded),
-              Padding(
-                padding: EdgeInsets.only(left: 12),
-                child: CircleAvatar(
-                  backgroundColor: Colors.deepPurple,
-                  radius: 17,
-                  child: Text(userInitial.toUpperCase()),
+      child: ModalProgressHUD(
+      inAsyncCall: isLoading,
+      progressIndicator: const RedditLoadingIndicator(),
+      blur: 0,
+      opacity: 0,
+      offset: Offset( ScreenSizeHandler.screenWidth*0.47,ScreenSizeHandler.screenHeight*0.6),
+        child: Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.menu),
                 ),
-              )
-            ],
+                const Image(
+                  image: AssetImage('assets/images/logo_white.png'),
+                  height: 50,
+                ),
+                const Text('Dogs'),
+                const Spacer(),
+                const Icon(Icons.apps_rounded),
+                Padding(
+                  padding: EdgeInsets.only(left: 12),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.deepPurple,
+                    radius: 17,
+                    child: Text(userInitial.toUpperCase()),
+                  ),
+                )
+              ],
+            ),
           ),
-        ),
-        body: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: ScreenSizeHandler.screenWidth * 0.12),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return GridView.builder(
-                itemCount: documents.length + 1,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:
-                      (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
-                                  2 >
-                              7
-                          ? 7
-                          : (ScreenSizeHandler.screenWidth *
-                                          0.9 ~/
-                                          kDocumentWidth) -
-                                      2 >
-                                  0
-                              ? (ScreenSizeHandler.screenWidth *
-                                      0.9 ~/
-                                      kDocumentWidth) -
-                                  2
-                              : 1,
-                  mainAxisExtent: kDocumentHeight + 62,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  if (index == 0) {
-                    return GestureDetector(
-                      onTap: () {
-                        createDocument();
-                      },
-                      child: const SizedBox(
-                        height: kDocumentHeight,
-                        width: kDocumentWidth,
-                        child: Image(
-                          image: AssetImage(
-                            "assets/images/AddDocument.png",
+          body: Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: ScreenSizeHandler.screenWidth * 0.12),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GridView.builder(
+                  itemCount: documents.length + 1,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount:
+                        (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
+                                    2 >
+                                7
+                            ? 7
+                            : (ScreenSizeHandler.screenWidth *
+                                            0.9 ~/
+                                            kDocumentWidth) -
+                                        2 >
+                                    0
+                                ? (ScreenSizeHandler.screenWidth *
+                                        0.9 ~/
+                                        kDocumentWidth) -
+                                    2
+                                : 1,
+                    mainAxisExtent: kDocumentHeight + 62,
+                  ),
+                  itemBuilder: (BuildContext context, int index) {
+                    if (index == 0) {
+                      return GestureDetector(
+                        onTap: () {
+                          createDocument();
+                        },
+                        child: const SizedBox(
+                          height: kDocumentHeight,
+                          width: kDocumentWidth,
+                          child: Image(
+                            image: AssetImage(
+                              "assets/images/AddDocument.png",
+                            ),
                           ),
                         ),
-                      ),
+                      );
+                    }
+                    return Document(
+                      document: documents[index - 1],
+                      index: index - 1,
+                      showRenameDialog: _showRenameDialog,
+                      showDeleteDialog: _showDeleteDialog,
                     );
-                  }
-                  return Document(
-                    document: documents[index - 1],
-                    index: index - 1,
-                    showRenameDialog: _showRenameDialog,
-                    showDeleteDialog: _showDeleteDialog,
-                  );
-                },
-              );
-            },
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),
