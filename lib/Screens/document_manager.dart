@@ -114,6 +114,11 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     //   userInitial = args['initialLetter'];
     // }
     super.didChangeDependencies();
+    Map<String, dynamic> args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    if (args['initialLetter'] != null) {
+      userInitial = args['initialLetter'];
+    }
     if (mounted) {
       setState(() {
         getAllUserDocuments();

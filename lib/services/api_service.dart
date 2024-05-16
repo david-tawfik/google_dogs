@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
 // const String baseURL = "http://localhost:5555/api";
- const String baseURL = "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
+const String baseURL =
+    "https://google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io/api";
 
 class ApiService {
   String token = '';
@@ -67,7 +68,6 @@ class ApiService {
     }
   }
 
-
   Future<Response> register(Map<String, dynamic> body) async {
     var result = await request('/users/register',
         headers: header, method: 'POST', body: body);
@@ -80,10 +80,12 @@ class ApiService {
     return result;
   }
 
-    Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
-      print(body);
-    var result = await request('/relations/getAllUserDocuments?userId=${body['userId']}',
-        headers: header, method: 'GET');
+  Future<Response> getAllUserDocuments(Map<String, dynamic> body) async {
+    print(body);
+    var result = await request(
+        '/relations/getAllUserDocuments?userId=${body['userId']}',
+        headers: header,
+        method: 'GET');
     print(result);
     return result;
   }
@@ -118,7 +120,7 @@ class ApiService {
         headers: header, method: 'PATCH', body: body);
     return result;
   }
-  
+
   // Future<Response> updateDocumentContent(Map<String, dynamic> body) async {
   //   print(body);
   //   var result = await request('/documents/updateDocumentContent',
@@ -126,12 +128,12 @@ class ApiService {
   //   return result;
   // }
 
-    Future<Response> renameDocument(Map<String, dynamic> body) async {
-      // print('aaaaaaaa: $body');
+  Future<Response> renameDocument(Map<String, dynamic> body) async {
+    // print('aaaaaaaa: $body');
     var result = await request('/documents/renameDocument',
         headers: header, method: 'PATCH', body: body);
-        // print(result.body);
-        // print(result.statusCode);
+    // print(result.body);
+    // print(result.statusCode);
     return result;
   }
 
@@ -141,4 +143,3 @@ class ApiService {
     return result;
   }
 }
-

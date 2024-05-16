@@ -15,7 +15,6 @@ import 'package:google_dogs/components/reddit_loading_indicator.dart';
 
 import '../utilities/screen_size_handler.dart';
 
-
 const String webSocketURL = 'http://localhost:3000';
 // const String webSocketURL = 'http://20.90.88.241';
 // const String baseURL = "google-dogs.bluewater-55be1484.uksouth.azurecontainerapps.io";
@@ -27,20 +26,19 @@ class User {
   User({required this.email, required this.permission});
 }
 
-
 class CRDTNode {
-  double siteID;
+  double uniqueId;
   double fractionalID;
   String character;
   bool isBold;
   bool isItalic;
 
-  CRDTNode(this.siteID, this.fractionalID, this.character, this.isBold,
+  CRDTNode(this.uniqueId, this.fractionalID, this.character, this.isBold,
       this.isItalic);
 
   Map<String, dynamic> toJson() {
     return {
-      'siteID': siteID,
+      'uniqueId': uniqueId,
       'fractionalID': fractionalID,
       'character': character,
       'isBold': isBold,
@@ -74,14 +72,18 @@ class CRDT {
 
   CRDTNode localInsert(String value, int index, bool isBold, bool isItalic) {
     print("BEFORE");
+    // for (var i = 0; i < struct.length; i++) {
+    //   print(struct[i].fractionalID);
+    // }
     for (var i = 0; i < struct.length; i++) {
-      print(struct[i].fractionalID);
+      print(struct[i].character);
     }
-
     print('local');
     final char = generateChar(value, index, isBold, isItalic);
-    print("passed");
+    // struct = struct.reversed.toList();
+    print("han insert harf: ${char.character} at ${index + 1}");
     struct.insert(index + 1, char);
+    // struct = struct.reversed.toList();
     print("AFTER");
     for (var i = 0; i < struct.length; i++) {
       print(struct[i].fractionalID);
@@ -92,50 +94,55 @@ class CRDT {
   List<CRDTNode> localBold(int start, int length) {
     List<CRDTNode> updatedNodes = [];
 
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isBold = true;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localUnbold(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isBold = false;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localItalic(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isItalic = true;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<CRDTNode> localUnitalic(int start, int length) {
     List<CRDTNode> updatedNodes = [];
-
+    // struct = struct.reversed.toList();
     for (var i = start + 1; i < start + 1 + length; i++) {
       struct[i].isItalic = false;
       updatedNodes.add(struct[i]);
     }
+    // struct = struct.reversed.toList();
 
     return updatedNodes;
   }
 
   List<int> remoteBold(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isBold = true;
       updatedIndices.add(index - 1);
@@ -145,7 +152,7 @@ class CRDT {
 
   List<int> remoteUnbold(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isBold = false;
       updatedIndices.add(index - 1);
@@ -155,7 +162,7 @@ class CRDT {
 
   List<int> remoteItalic(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isItalic = true;
       updatedIndices.add(index - 1);
@@ -165,7 +172,7 @@ class CRDT {
 
   List<int> remoteUnitalic(int uniqueId) {
     List<int> updatedIndices = [];
-    int index = struct.indexWhere((char) => char.siteID == uniqueId);
+    int index = struct.indexWhere((char) => char.uniqueId == uniqueId);
     if (index != -1) {
       struct[index - 1].isItalic = false;
       updatedIndices.add(index - 1);
@@ -230,9 +237,15 @@ class CRDT {
 
   int comparePositions(CRDTNode a, CRDTNode b) {
     // Compare fractional IDs of CRDTNodes
-    // Example:
     if (a.fractionalID == b.fractionalID) {
-      return 0;
+      // Use uniqueId as a tie breaker
+      if (a.uniqueId == b.uniqueId) {
+        return 0;
+      } else if (a.uniqueId < b.uniqueId) {
+        return -1;
+      } else {
+        return 1;
+      }
     } else if (a.fractionalID < b.fractionalID) {
       return -1;
     } else {
@@ -297,7 +310,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
   bool isReadOnly = true;
   bool isLocalChange = true;
   StreamSubscription<quill.DocChange>? _changeSubscription;
+
   bool isLoading=false;
+
+  bool isFirstTime = true;
+
 
   CRDT? crdt;
 
@@ -307,13 +324,17 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void dispose() {
     _changeSubscription?.cancel();
     _controller.dispose();
+    socket.disconnect();
     super.dispose();
   }
 
-  void crdtToQuill(List<CRDTNode> crdts) {
+  void crdtToQuill(
+    List<CRDTNode> crdts,
+  ) {
     print('started function');
     final length = crdts.length;
     print(crdts);
+
     for (var i = 0; i < length; i++) {
       final crdt = crdts[i];
       var style = quill.Style();
@@ -326,16 +347,18 @@ class _TextEditorPageState extends State<TextEditorPage> {
       print(i);
       print('inserting');
       print("Size: ${_controller.document.length}");
+
       // Ensure that crdt.character is a String
       String character = crdt.character.toString();
-      // Check if character is not empty
+
+      // Check if character is not emptyF
       if (character.isNotEmpty) {
         // Use the compose method to insert the character with styling
         _controller.document.compose(
             quillDelta.Delta()..insert(character, style.attributes),
             quill.ChangeSource.remote);
+        print('after insert');
       }
-      print('after insert');
     }
   }
 
@@ -352,12 +375,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
     // Ensure that crdt.character is a String
     if (char.isNotEmpty) {
       // Use the compose method to insert the character with styling
+      print(index);
 
       _controller.document.compose(
           quillDelta.Delta()
             ..retain(index - 1)
             ..insert(char, style.attributes),
-          quill.ChangeSource.local);
+          quill.ChangeSource.remote);
     }
     print('after insert');
   }
@@ -366,6 +390,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void initState() {
     _changeSubscription =
         _controller.document.changes.listen((quill.DocChange change) {
+      print(change.source);
+      if (change.source == quill.ChangeSource.remote) {
+        print('msh hab3at');
+        return;
+      }
       print('hohohoho');
       print(change.change.toList());
       final operations = change.change.toList();
@@ -377,6 +406,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       } else if (lastOperation.isRetain && lastOperation.attributes != null) {
         if (lastOperation.attributes!.containsKey('bold')) {
           if (lastOperation.attributes!['bold'] != null) {
+            print('etba3 henaaa');
             handleLocalBold(change);
           } else {
             handleLocalUnbold(change);
@@ -391,7 +421,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
       }
     });
     super.initState();
-
   }
 
   //   void loadDocument() async {
@@ -414,9 +443,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   // }
 
   void handleLocalInsert(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -443,10 +472,11 @@ class _TextEditorPageState extends State<TextEditorPage> {
       CRDTNode justInserted =
           crdt!.localInsert(character, position, isBold, isItalic);
       //crdtToQuill(crdt!.struct);
+      print('ana ha insert');
       socket.emit("insert", [
         documentId,
         justInserted.character,
-        justInserted.siteID.toString(),
+        justInserted.uniqueId.toString(),
         justInserted.fractionalID.toString(),
         justInserted.isBold,
         justInserted.isItalic
@@ -455,9 +485,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalBold(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -484,15 +514,16 @@ class _TextEditorPageState extends State<TextEditorPage> {
     if (isBold) {
       print("Bold change at position: $position, length: $length");
       List<CRDTNode> updatedNodes = crdt!.localBold(position, length);
+      print("el hayb2o bold: ${updatedNodes[0].character}");
       print(updatedNodes[0].character);
       socket.emit("update", [documentId, "bold", updatedNodes]);
     }
   }
 
   void handleLocalUnbold(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -521,9 +552,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalItalic(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -552,9 +583,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalUnitalic(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("CHANGE");
     final operations = change.change.toList();
     print(operations);
@@ -591,6 +622,10 @@ class _TextEditorPageState extends State<TextEditorPage> {
     bool isBold = data[3];
     bool isItalic = data[4];
 
+    for (var i = 0; i < crdt!.struct.length; i++) {
+      print(crdt!.struct[i].fractionalID);
+    }
+
     // Insert the character into the CRDT structure
     CRDTNode newNode =
         CRDTNode(siteID, fractionalID, character, isBold, isItalic);
@@ -611,9 +646,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
   }
 
   void handleLocalDelete(quill.DocChange change) {
-    if (!isLocalChange) {
-      return;
-    }
+    // if (!isLocalChange) {
+    //   return;
+    // }
     print("DELETE");
     final operations = change.change.toList();
     print(operations);
@@ -634,7 +669,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.emit("delete", [
       documentId,
       justDeleted.character,
-      justDeleted.siteID.toString(),
+      justDeleted.uniqueId.toString(),
       justDeleted.fractionalID.toString(),
       justDeleted.isBold,
       justDeleted.isItalic
@@ -673,25 +708,36 @@ class _TextEditorPageState extends State<TextEditorPage> {
   void updateQuillDocument(String operation, List<int> updatedIndices) {
     switch (operation) {
       case 'bold':
+        print("gowa: $updatedIndices");
         updatedIndices.forEach((index) {
-          _controller.document.format(index, 1, quill.Attribute.bold);
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'bold': true});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'unbold':
         updatedIndices.forEach((index) {
-          _controller.document.format(
-              index, 1, quill.Attribute.clone(quill.Attribute.bold, null));
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'bold': null});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'italic':
         updatedIndices.forEach((index) {
-          _controller.document.format(index, 1, quill.Attribute.italic);
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'italic': true});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       case 'unitalic':
         updatedIndices.forEach((index) {
-          _controller.document.format(
-              index, 1, quill.Attribute.clone(quill.Attribute.italic, null));
+          var delta = quillDelta.Delta()
+            ..retain(index)
+            ..retain(1, {'italic': null});
+          _controller.document.compose(delta, quill.ChangeSource.remote);
         });
         break;
       default:
@@ -706,10 +752,13 @@ class _TextEditorPageState extends State<TextEditorPage> {
     List<int> updatedIndices = [];
 
     updatedNodes.forEach((node) {
-      int uniqueId = node['siteID'];
+      int uniqueId = node['uniqueId'];
       switch (updateType) {
         case 'bold':
           updatedIndices = crdt!.remoteBold(uniqueId);
+          print("1: $updatedIndices");
+          updatedIndices = updatedIndices.reversed.toList();
+          print("2: $updatedIndices");
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -722,7 +771,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'unbold':
           updatedIndices = crdt!.remoteUnbold(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -735,7 +783,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'italic':
           updatedIndices = crdt!.remoteItalic(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -748,7 +795,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
           break;
         case 'unitalic':
           updatedIndices = crdt!.remoteUnitalic(uniqueId);
-          updatedIndices = crdt!.remoteBold(uniqueId);
           isLocalChange = false;
           if (mounted) {
             setState(() {
@@ -781,8 +827,12 @@ class _TextEditorPageState extends State<TextEditorPage> {
     socket.on('document', loadContent);
     socket.on('update', handleRemoteUpdate);
   }
-  void loadContent(data)
-  {
+
+  void loadContent(data) {
+    if (!isFirstTime) {
+      return;
+    }
+    isFirstTime = false;
     print('Load content event received: $data');
     // Parse the received data
     List<CRDTNode> crdts = [];
@@ -796,19 +846,21 @@ class _TextEditorPageState extends State<TextEditorPage> {
       ));
     }
     // Update the Quill editor with the received content
-    crdt!.struct = crdts;
+    crdt!.struct = crdts; //TA3ALA HENA TANYY
     isLocalChange = false;
     if (mounted) {
       setState(() {
-        crdtToQuill(crdts);
+        crdtToQuill(crdts.reversed.toList());
       });
-      
     }
-    Future.microtask(() {
-      isLocalChange = true;
-    });
 
+    crdt!.struct = crdts;
+
+    // Future.microtask(() {
+    //   isLocalChange = true;
+    // });
   }
+
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -822,7 +874,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
     crdt = CRDT(documentId);
     connect();
-
   }
 
   Future<void> getUsersFromDocumentID() async {
@@ -923,7 +974,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
       var document = jsonDecode(response.body);
       setState(() {
         documentTitle = document['title'];
-                // if (document['content'] != null && document['content'].isNotEmpty) {
+        // if (document['content'] != null && document['content'].isNotEmpty) {
         //   _controller.document =
         //       quill.Document.fromJson(jsonDecode(document['content']));
         // }
@@ -952,7 +1003,7 @@ class _TextEditorPageState extends State<TextEditorPage> {
     });
   }
 
-  final quill.QuillController _controller = quill.QuillController.basic();
+  quill.QuillController _controller = quill.QuillController.basic();
 
   @override
   Widget build(BuildContext context) {
@@ -1230,6 +1281,265 @@ class _TextEditorPageState extends State<TextEditorPage> {
                                         // ),
                                       ],
                                     );
+// =======
+//                         setState(() {
+//                           final selectionStyle =
+//                               _controller.getSelectionStyle();
+//                           isBold = !selectionStyle.containsKey('bold');
+//                           _futureTextIsBold = isBold;
+//                           if (isBold) {
+//                             _controller.formatSelection(quill.Attribute.bold);
+//                           } else {
+//                             _controller.formatSelection(quill.Attribute.clone(
+//                                 quill.Attribute.bold, null));
+//                           }
+//                           _editorFocusNode.requestFocus();
+//                         });
+//                       },
+//                       icon: Icon(Icons.format_bold)),
+//                   IconButton(
+//                       style: ButtonStyle(
+//                         foregroundColor:
+//                             MaterialStateProperty.all(kBackgroundColor),
+//                         backgroundColor:
+//                             MaterialStateProperty.all(Colors.deepPurple[200]),
+//                       ),
+//                       onPressed: () {
+//                         setState(() {
+//                           final selectionStyle =
+//                               _controller.getSelectionStyle();
+//                           isItalic = !selectionStyle.containsKey('italic');
+
+//                           if (isItalic) {
+//                             _controller.formatSelection(quill.Attribute.italic);
+//                           } else {
+//                             _controller.formatSelection(quill.Attribute.clone(
+//                                 quill.Attribute.italic, null));
+//                           }
+//                           _editorFocusNode.requestFocus();
+//                         });
+//                       },
+//                       icon: Icon(Icons.format_italic)),
+//                   IconButton(
+//                     onPressed: () {
+//                       showDialog(
+//                         context: context,
+//                         builder: (BuildContext context) {
+//                           return Theme(
+//                             data: ThemeData.dark(),
+//                             child: AlertDialog(
+//                               title: Text(
+//                                 "Share '$documentTitle'",
+//                                 style: TextStyle(fontWeight: FontWeight.w500),
+//                               ),
+//                               content: StatefulBuilder(
+//                                 builder: (BuildContext context,
+//                                     StateSetter setState) {
+//                                   return Column(
+//                                     mainAxisSize: MainAxisSize.min,
+//                                     children: [
+//                                       TextField(
+//                                         focusNode: emailFocusNode,
+//                                         controller: _emailController,
+//                                         decoration: const InputDecoration(
+//                                           hintText: 'Add people',
+//                                         ),
+//                                         onTap: () {
+//                                           role == 'viewer'
+//                                               ? setState(() {
+//                                                   showSnackBar(
+//                                                       'You do not have permission to add users',
+//                                                       context);
+//                                                 })
+//                                               : null;
+//                                         },
+//                                         readOnly:
+//                                             role == 'viewer' ? true : false,
+//                                         onChanged: (value) {
+//                                           setState(() {
+//                                             isValid = isEmailValid(value);
+//                                           });
+//                                         },
+//                                       ),
+//                                       isValid
+//                                           ? Align(
+//                                               alignment: Alignment.centerRight,
+//                                               child:
+//                                                   DropdownButtonHideUnderline(
+//                                                 child: DropdownButton(
+//                                                   focusNode: selectorFocusNode,
+//                                                   iconEnabledColor:
+//                                                       Colors.deepPurple[200],
+//                                                   style: TextStyle(
+//                                                     fontSize: 13.0,
+//                                                     color:
+//                                                         Colors.deepPurple[200],
+//                                                   ),
+//                                                   alignment:
+//                                                       AlignmentDirectional
+//                                                           .center,
+//                                                   isDense: true,
+//                                                   padding: const EdgeInsets
+//                                                       .symmetric(
+//                                                       horizontal: 10.0,
+//                                                       vertical: 5.0),
+//                                                   items: const [
+//                                                     DropdownMenuItem(
+//                                                       value: 'editor',
+//                                                       child: Text('Editor'),
+//                                                     ),
+//                                                     DropdownMenuItem(
+//                                                       value: 'viewer',
+//                                                       child: Text('Viewer'),
+//                                                     ),
+//                                                   ],
+//                                                   onChanged: (value) {
+//                                                     setState(() {
+//                                                       selectedPermission =
+//                                                           value.toString();
+//                                                       selectorFocusNode
+//                                                           .unfocus();
+//                                                     });
+//                                                   },
+//                                                   value: selectedPermission,
+//                                                   borderRadius:
+//                                                       BorderRadius.circular(
+//                                                           20.0),
+//                                                 ),
+//                                               ),
+//                                             )
+//                                           : const SizedBox(
+//                                               height: 34.0,
+//                                             ),
+//                                       const Align(
+//                                           alignment: Alignment.centerLeft,
+//                                           child: Text(
+//                                             'People with access',
+//                                             style: TextStyle(
+//                                                 fontSize: 14.0,
+//                                                 fontWeight: FontWeight.w600),
+//                                           )),
+//                                       ButtonBar(
+//                                           alignment:
+//                                               MainAxisAlignment.spaceBetween,
+//                                           children: [
+//                                             Icon(Icons.person),
+//                                             Text(creatorEmail),
+//                                             Text(
+//                                               'Owner',
+//                                               style: TextStyle(
+//                                                   fontSize: 13.0,
+//                                                   color: Colors.grey[400]),
+//                                             )
+//                                           ]),
+//                                       if (users.isNotEmpty)
+//                                         SingleChildScrollView(
+//                                           physics:
+//                                               AlwaysScrollableScrollPhysics(),
+//                                           child: Column(
+//                                             children: [
+//                                               for (int index = 0;
+//                                                   index < users.length;
+//                                                   index++)
+//                                                 ButtonBar(
+//                                                   alignment: MainAxisAlignment
+//                                                       .spaceBetween,
+//                                                   children: [
+//                                                     Icon(Icons.person),
+//                                                     Text(users[index].email),
+//                                                     DropdownButtonHideUnderline(
+//                                                       child: DropdownButton(
+//                                                         // focusNode: permissionFocusNode,
+//                                                         iconEnabledColor: Colors
+//                                                             .deepPurple[200],
+//                                                         style: TextStyle(
+//                                                           fontSize: 13.0,
+//                                                           color: Colors
+//                                                               .deepPurple[200],
+//                                                         ),
+//                                                         alignment:
+//                                                             AlignmentDirectional
+//                                                                 .center,
+//                                                         isDense: true,
+//                                                         padding:
+//                                                             const EdgeInsets
+//                                                                 .symmetric(
+//                                                                 horizontal:
+//                                                                     10.0,
+//                                                                 vertical: 5.0),
+//                                                         items: const [
+//                                                           DropdownMenuItem(
+//                                                             value: 'editor',
+//                                                             child:
+//                                                                 Text('Editor'),
+//                                                           ),
+//                                                           DropdownMenuItem(
+//                                                             value: 'viewer',
+//                                                             child:
+//                                                                 Text('Viewer'),
+//                                                           ),
+//                                                         ],
+//                                                         onChanged: (value) {
+//                                                           role == 'viewer'
+//                                                               ? setState(() {
+//                                                                   showSnackBar(
+//                                                                       'You do not have permission to add users',
+//                                                                       context);
+//                                                                 })
+//                                                               : setState(() {
+//                                                                   users[index]
+//                                                                           .permission =
+//                                                                       value
+//                                                                           .toString();
+//                                                                   updateUserRole(
+//                                                                       users[index]
+//                                                                           .email,
+//                                                                       documentId,
+//                                                                       users[index]
+//                                                                           .permission);
+//                                                                   permissionFocusNode
+//                                                                       .unfocus();
+//                                                                 });
+//                                                         },
+//                                                         value: users[index]
+//                                                             .permission,
+//                                                         borderRadius:
+//                                                             BorderRadius
+//                                                                 .circular(20.0),
+//                                                       ),
+//                                                     ),
+//                                                   ],
+//                                                 )
+//                                             ],
+//                                           ),
+//                                         )
+//                                     ],
+//                                   );
+//                                 },
+//                               ),
+//                               actions: <Widget>[
+//                                 TextButton(
+//                                   style: ButtonStyle(
+//                                     foregroundColor: MaterialStateProperty.all(
+//                                         kBackgroundColor),
+//                                     backgroundColor: MaterialStateProperty.all(
+//                                         Colors.deepPurple[200]),
+//                                   ),
+//                                   child: const Text('Done'),
+//                                   onPressed: () {
+//                                     if (isValid) {
+//                                       setState(
+//                                         () {
+//                                           addUserToDocument(
+//                                               _emailController.text,
+//                                               documentId,
+//                                               selectedPermission);
+//                                           _emailController.clear();
+//                                         },
+//                                       );
+//                                     }
+//                                     Navigator.pop(context);
+// >>>>>>> d452a8917b1ad05efff211d9709e0cd915e5dab8
                                   },
                                 ),
                                 actions: <Widget>[
