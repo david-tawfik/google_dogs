@@ -13,8 +13,8 @@ class RedditLoadingIndicator extends StatelessWidget {
       width: ScreenSizeHandler.screenHeight * 0.13,
       height: ScreenSizeHandler.screenHeight * 0.13,
       child: const LoadingIndicator(
-        indicatorType: Indicator.ballClipRotateMultiple,
-        colors: [Colors.blue],
+        indicatorType: Indicator.ballSpinFadeLoader,
+        colors: [Colors.red,Colors.orange, Colors.yellow, Colors.green, Colors.blue,],
         strokeWidth: 2,
       ),
     );
