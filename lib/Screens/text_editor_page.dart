@@ -14,6 +14,7 @@ import 'package:google_dogs/utilities/user_id.dart';
 import 'package:google_dogs/components/reddit_loading_indicator.dart';
 
 import '../utilities/screen_size_handler.dart';
+import 'dart:math';
 
 const String webSocketURL = 'http://localhost:3000';
 // const String webSocketURL = 'http://20.90.88.241';
@@ -24,6 +25,13 @@ class User {
   String permission;
 
   User({required this.email, required this.permission});
+}
+
+double generateRandomTimestamp() {
+  var random = Random();
+  var randomNumber = (random.nextDouble() * 10000).round();
+  var timestamp = DateTime.now().millisecondsSinceEpoch.toDouble();
+  return timestamp + randomNumber;
 }
 
 class CRDTNode {
@@ -189,8 +197,7 @@ class CRDT {
     double fractionalId =
         (struct[index].fractionalID + struct[index + 1].fractionalID) / 2;
     print(fractionalId);
-    double globalId =
-        DateTime.now().millisecondsSinceEpoch.toDouble(); // TODO: ADD USER ID
+    double globalId = generateRandomTimestamp();
     return CRDTNode(globalId, fractionalId, value, isBold, isItalic);
   }
 
