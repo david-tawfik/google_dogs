@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_dogs/Screens/first_screen.dart';
 import 'package:google_dogs/services/api_service.dart';
 import 'package:google_dogs/constants.dart';
 import 'package:google_dogs/screens/text_editor_page.dart';
@@ -21,14 +22,13 @@ class DocumentManagerScreen extends StatefulWidget {
 class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   ApiService apiService = ApiService();
   String userInitial = 'u';
-  String userId = '';
+  String userId = 'not yet';
   List<DocumentStruct> documents = [];
   bool isLoading = false;
 
   Future<void> getAllUserDocuments() async {
     setState(() {
       isLoading = true;
-    
     });
     ApiService apiService = ApiService();
     var response = await apiService.getAllUserDocuments({'userId': userId});
@@ -60,7 +60,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   Future<void> renameDocument(String docId, String newName) async {
     setState(() {
       isLoading = true;
-    
     });
     ApiService apiService = ApiService();
     print('BWAHAHAHAHHHAHAHAHAHAHHAHAHAHHAHAHA');
@@ -82,8 +81,6 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
   Future<void> deleteDocument(String docId) async {
     setState(() {
       isLoading = true;
-    
-    
     });
     ApiService apiService = ApiService();
     var response = await apiService.deleteDocument({'docId': docId});
@@ -100,30 +97,36 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
         });
       }
     }
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
   void didChangeDependencies() {
     userId = UserIdStorage.getUserId().toString();
-    // Map<String, dynamic> args =
-    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    // if (args['initialLetter'] != null) {
-    //   userInitial = args['initialLetter'];
-    // }
-    super.didChangeDependencies();
-    Map<String, dynamic> args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    if (args['initialLetter'] != null) {
-      userInitial = args['initialLetter'];
-    }
+    try {
+      Map<String, dynamic> args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+      if (args['initialLetter'] != null) {
+        userInitial = args['initialLetter'];
+      }
     if (mounted) {
       setState(() {
         getAllUserDocuments();
       });
     }
+    } catch (e) {
+      Navigator.pushNamed(context, FirstScreen.id);
+    }
+    super.didChangeDependencies();
+    // Map<String, dynamic> args =
+    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    // if (args['initialLetter'] != null) {
+    //   userInitial = args['initialLetter'];
+    // }
   }
 
   Future<void> createDocument() async {
@@ -137,9 +140,11 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
       var recievedDocument = jsonDecode(response.body);
       setState(() {
         Navigator.pushNamed(context, TextEditorPage.id,
-            arguments: {"documentId": recievedDocument['id']}).then((value) {
-          getAllUserDocuments();
-            },);
+            arguments: {"documentId": recievedDocument['id']}).then(
+          (value) {
+            getAllUserDocuments();
+          },
+        );
       });
     } else {
       showSnackBar('Failed to create document', context);
@@ -235,11 +240,12 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
     return Theme(
       data: ThemeData.dark(),
       child: ModalProgressHUD(
-      inAsyncCall: isLoading,
-      progressIndicator: const RedditLoadingIndicator(),
-      blur: 0,
-      opacity: 0,
-      offset: Offset( ScreenSizeHandler.screenWidth*0.47,ScreenSizeHandler.screenHeight*0.6),
+        inAsyncCall: isLoading,
+        progressIndicator: const RedditLoadingIndicator(),
+        blur: 0,
+        opacity: 0,
+        offset: Offset(ScreenSizeHandler.screenWidth * 0.47,
+            ScreenSizeHandler.screenHeight * 0.6),
         child: Scaffold(
           appBar: AppBar(
             title: Row(
@@ -274,21 +280,22 @@ class _DocumentManagerScreenState extends State<DocumentManagerScreen> {
                 return GridView.builder(
                   itemCount: documents.length + 1,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount:
-                        (ScreenSizeHandler.screenWidth * 0.9 ~/ kDocumentWidth) -
-                                    2 >
-                                7
-                            ? 7
-                            : (ScreenSizeHandler.screenWidth *
-                                            0.9 ~/
-                                            kDocumentWidth) -
-                                        2 >
-                                    0
-                                ? (ScreenSizeHandler.screenWidth *
+                    crossAxisCount: (ScreenSizeHandler.screenWidth *
+                                    0.9 ~/
+                                    kDocumentWidth) -
+                                2 >
+                            7
+                        ? 7
+                        : (ScreenSizeHandler.screenWidth *
                                         0.9 ~/
                                         kDocumentWidth) -
-                                    2
-                                : 1,
+                                    2 >
+                                0
+                            ? (ScreenSizeHandler.screenWidth *
+                                    0.9 ~/
+                                    kDocumentWidth) -
+                                2
+                            : 1,
                     mainAxisExtent: kDocumentHeight + 62,
                   ),
                   itemBuilder: (BuildContext context, int index) {

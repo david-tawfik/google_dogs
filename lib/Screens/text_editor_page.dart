@@ -212,7 +212,11 @@ class CRDT {
   }
 
   int remoteDelete(CRDTNode char) {
-    final index = struct.indexWhere((node) => node.uniqueId == char.uniqueId);
+    for (var i = 0; i < struct.length; i++) {
+      print(struct[i].fractionalID);
+    }
+    final index =
+        struct.indexWhere((node) => node.fractionalID == char.fractionalID);
     if (index != -1) {
       struct.removeAt(index);
     }
@@ -629,10 +633,6 @@ class _TextEditorPageState extends State<TextEditorPage> {
     bool isBold = data[3];
     bool isItalic = data[4];
 
-    for (var i = 0; i < crdt!.struct.length; i++) {
-      print(crdt!.struct[i].fractionalID);
-    }
-
     // Insert the character into the CRDT structure
     CRDTNode newNode =
         CRDTNode(siteID, fractionalID, character, isBold, isItalic);
@@ -640,6 +640,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
     var returnedChar = result['char'];
     var returnedIndex = result['index'];
 
+    for (var i = 0; i < crdt!.struct.length; i++) {
+      print(crdt!.struct[i].fractionalID);
+    }
     // Apply the delta to the document
     isLocalChange = false;
     if (mounted) {
@@ -695,6 +698,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
     );
 
     int index = crdt!.remoteDelete(newNode);
+    print(index);
+    print(newNode.uniqueId);
+    print(newNode.fractionalID);
     // Create a delta representing the delete operation
     quillDelta.Delta delta = quillDelta.Delta()
       // Move the cursor to the desired position
@@ -861,7 +867,9 @@ class _TextEditorPageState extends State<TextEditorPage> {
       });
     }
 
-    crdt!.struct = crdts;
+    for (var i = 0; i < crdt!.struct.length; i++) {
+      print(crdt!.struct[i].uniqueId);
+    }
 
     // Future.microtask(() {
     //   isLocalChange = true;
